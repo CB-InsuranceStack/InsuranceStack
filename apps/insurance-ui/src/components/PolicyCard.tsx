@@ -61,8 +61,8 @@ export default function PolicyCard({ policy }: PolicyCardProps) {
     }
   };
 
-  const Icon = getPolicyIcon(policy.policyType);
-  const typeColorClass = getPolicyTypeColor(policy.policyType);
+  const Icon = getPolicyIcon(policy.type);
+  const typeColorClass = getPolicyTypeColor(policy.type);
 
   return (
     <div className="card p-6 hover:shadow-lg transition-shadow cursor-pointer">
@@ -78,7 +78,7 @@ export default function PolicyCard({ policy }: PolicyCardProps) {
       <div className="space-y-3">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 capitalize">
-            {policy.policyType} Insurance
+            {policy.type} Insurance
           </h3>
           <p className="text-sm text-gray-500">Policy #{policy.policyNumber}</p>
         </div>

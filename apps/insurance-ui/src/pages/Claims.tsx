@@ -27,7 +27,7 @@ export default function Claims() {
     const matchesSearch =
       claim.claimNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       claim.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      claim.claimType.toLowerCase().includes(searchQuery.toLowerCase());
+      claim.type.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = !statusFilter || claim.status === statusFilter;
 

@@ -14,8 +14,14 @@ export interface Customer {
   email: string;
   phone?: string;
   dateOfBirth?: string;
-  address?: string;
-  status: 'active' | 'inactive' | 'suspended';
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  riskScore?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,13 +30,14 @@ export interface Policy {
   id: string;
   customerId: string;
   policyNumber: string;
-  policyType: 'auto' | 'home' | 'life' | 'health';
-  status: 'active' | 'expired' | 'cancelled' | 'pending';
+  type: 'auto' | 'home' | 'life' | 'health';
+  status: 'active' | 'lapsed' | 'cancelled';
   premium: number;
   coverage: number;
   deductible?: number;
   startDate: string;
   endDate: string;
+  renewalDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,27 +45,29 @@ export interface Policy {
 export interface Claim {
   id: string;
   policyId: string;
+  customerId: string;
   claimNumber: string;
-  claimType: string;
-  status: 'submitted' | 'under_review' | 'approved' | 'denied' | 'paid';
+  type: string;
+  status: 'submitted' | 'under_review' | 'approved' | 'rejected';
   amount: number;
   description: string;
-  dateOfLoss: string;
   submittedDate: string;
-  resolvedDate?: string;
+  reviewedDate?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Payment {
   id: string;
-  policyId: string;
+  type: 'premium' | 'payout';
+  policyId?: string;
+  claimId?: string;
+  customerId: string;
   amount: number;
-  paymentType: 'premium' | 'claim' | 'refund';
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  paymentMethod?: string;
-  paymentDate: string;
+  status: 'pending' | 'completed' | 'failed';
+  processedDate?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Quote {
