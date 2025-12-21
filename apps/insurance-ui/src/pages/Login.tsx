@@ -34,8 +34,8 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-600 rounded-2xl mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AccountStack</h1>
-          <p className="text-gray-600">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">InsuranceStack</h1>
+          <p className="text-gray-600">Sign in to manage insurance</p>
         </div>
 
         {/* Login Card */}
@@ -59,7 +59,7 @@ export default function Login() {
                 type="email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="demo@accountstack.com"
+                placeholder="demo@insurancestack.com"
                 required
                 className="input w-full"
                 disabled={isLoading}
@@ -109,7 +109,7 @@ export default function Login() {
               <p className="text-sm text-gray-600 text-center mb-2">Demo Credentials:</p>
               <div className="bg-gray-50 rounded-lg p-3 text-sm">
                 <p className="text-gray-700 font-mono">
-                  <span className="text-gray-500">Email:</span> demo@accountstack.com
+                  <span className="text-gray-500">Email:</span> demo@insurancestack.com
                 </p>
                 <p className="text-gray-700 font-mono">
                   <span className="text-gray-500">Password:</span> demo123

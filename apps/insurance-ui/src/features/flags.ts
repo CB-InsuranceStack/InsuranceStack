@@ -31,7 +31,7 @@ interface RoxConfig {
 // Initialize Rox with the feature flags
 export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<void> {
   // Register the feature flags container
-  Rox.register('accountstack', flags);
+  Rox.register('insurancestack', flags);
 
   // Setup Rox with configuration
   const roxConfig: RoxSetupOptions = {
