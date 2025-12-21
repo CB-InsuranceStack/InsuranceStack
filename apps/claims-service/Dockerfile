@@ -8,16 +8,16 @@ RUN apk add --no-cache git
 WORKDIR /build
 
 # Copy go mod files
-COPY apps/api-transactions/go.mod apps/api-transactions/go.sum ./
+COPY apps/claims-service/go.mod apps/claims-service/go.sum ./
 
 # Download dependencies
 RUN go mod download
 
 # Copy source code
-COPY apps/api-transactions/ ./
+COPY apps/claims-service/ ./
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o transactions-api cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o claims-service cmd/server/main.go
 
 # Final stage
 FROM alpine:latest
@@ -32,7 +32,7 @@ RUN addgroup -g 1000 appuser && \
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /build/transactions-api .
+COPY --from=builder /build/claims-service .
 
 # Copy seed data from the build context
 COPY data/seed ./data
@@ -45,7 +45,7 @@ USER appuser
 
 # Set environment variables
 ENV DATA_PATH=/app/data \
-    PORT=3000
+    PORT=8002
 
 # Expose port
 EXPOSE 8002
@@ -55,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8002/healthz || exit 1
 
 # Run the application
-CMD ["./transactions-api"]
+CMD ["./claims-service"]

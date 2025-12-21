@@ -8,16 +8,16 @@ RUN apk add --no-cache git
 WORKDIR /build
 
 # Copy go mod files
-COPY apps/api-insights/go.mod apps/api-insights/go.sum ./
+COPY apps/pricing-engine/go.mod apps/pricing-engine/go.sum ./
 
 # Download dependencies
 RUN go mod download
 
 # Copy source code
-COPY apps/api-insights/ ./
+COPY apps/pricing-engine/ ./
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o insights-api cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pricing-engine cmd/server/main.go
 
 # Final stage
 FROM alpine:latest
@@ -32,7 +32,7 @@ RUN addgroup -g 1000 appuser && \
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /build/insights-api .
+COPY --from=builder /build/pricing-engine .
 
 # Copy seed data from the build context
 COPY data/seed ./data
@@ -45,7 +45,7 @@ USER appuser
 
 # Set environment variables
 ENV DATA_PATH=/app/data \
-    PORT=3000
+    PORT=8003
 
 # Expose port
 EXPOSE 8003
@@ -55,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8003/healthz || exit 1
 
 # Run the application
-CMD ["./insights-api"]
+CMD ["./pricing-engine"]
