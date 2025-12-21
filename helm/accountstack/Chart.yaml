@@ -1,0 +1,13 @@
+apiVersion: v2
+name: accountstack
+description: A Helm chart for AccountStack application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - accountstack
+  - banking
+  - cloudbees
+  - feature-management
+maintainers:
+  - name: AccountStack Team

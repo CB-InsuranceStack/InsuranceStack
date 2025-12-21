@@ -1,0 +1,392 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Build and test Web UI
+  build-web:
+    outputs:
+      ARTIFACT_ID: ${{ steps.parse-web-artifact.outputs.id }}
+    steps:
+      - name: Checkout
+        uses: cloudbees-io/checkout@v1
+
+      - name: Install dependencies and run tests
+        kind: test
+        uses: docker://node:20-alpine
+        env:
+          CI: "true"
+        run: |
+          set -eu
+          cd apps/web
+          echo "Installing dependencies..."
+          npm ci
+
+          echo "Running linter..."
+          npm run lint || true
+
+          echo "Running unit tests..."
+          npm run test:unit -- --reporter=verbose --reporter=junit --outputFile.junit=./test-results.xml
+
+          echo "Building application..."
+          npm run build
+
+      - name: Publish Web test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: junit
+          folder-name: ${{ cloudbees.workspace }}/apps/web
+
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.AStack_docker_user }}
+          password: ${{ secrets.AStack_docker_token }}
+
+      - name: Calculate base path
+        id: basepath
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          REPOSITORY: ${{ cloudbees.scm.repository }}
+          BRANCH: ${{ cloudbees.scm.branch }}
+        run: |
+          set -eu
+          # Extract owner from repository (format: owner/repo)
+          ORG=$(echo "$REPOSITORY" | cut -d'/' -f1)
+
+          # Map branch name to environment name
+          case "$BRANCH" in
+            main)
+              ENV_NAME="account-stack-dev"
+              ;;
+            develop)
+              ENV_NAME="account-stack-develop"
+              ;;
+            staging)
+              ENV_NAME="account-stack-staging"
+              ;;
+            production)
+              ENV_NAME="account-stack-prod"
+              ;;
+            *)
+              # For other branches, sanitize branch name for use in path
+              ENV_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr -c '[:alnum:]-' '-' | sed 's/^-*//; s/-*$//')
+              ENV_NAME="account-stack-${ENV_NAME}"
+              ;;
+          esac
+
+          # Construct base path: /org/env
+          BASE_PATH="/${ORG}/${ENV_NAME}"
+          printf '%s' "$BASE_PATH" > "$CLOUDBEES_OUTPUTS/value"
+          echo "Base path: $BASE_PATH"
+
+      - name: Build Docker image
+        kind: build
+        id: kaniko-web
+        uses: cloudbees-io/kaniko@v1
+        with:
+          context: apps/web
+          dockerfile: apps/web/Dockerfile
+          destination: ${{ vars.AStack_docker_user }}/accountstack-web:${{ cloudbees.scm.sha }}
+          build-args: BASE_PATH=${{ steps.basepath.outputs.value }}
+          labels: |
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
+
+      - name: Parse Web artifact ID
+        id: parse-web-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-web.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Web artifact ID: $ART_ID"
+
+  # Build and test Accounts API
+  build-api-accounts:
+    outputs:
+      ARTIFACT_ID: ${{ steps.parse-accounts-artifact.outputs.id }}
+    steps:
+      - name: Checkout
+        uses: cloudbees-io/checkout@v1
+
+      - name: Run tests
+        kind: test
+        uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
+        run: |
+          set -eu
+          cd apps/api-accounts
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
+
+      - name: Publish API Accounts test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: go
+          folder-name: ${{ cloudbees.workspace }}/apps/api-accounts
+
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.AStack_docker_user }}
+          password: ${{ secrets.AStack_docker_token }}
+
+      - name: Build Docker image
+        kind: build
+        id: kaniko-accounts
+        uses: cloudbees-io/kaniko@v1
+        with:
+          context: .
+          dockerfile: apps/api-accounts/Dockerfile
+          destination: ${{ vars.AStack_docker_user }}/accountstack-api-accounts:${{ cloudbees.scm.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
+
+      - name: Parse Accounts API artifact ID
+        id: parse-accounts-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-accounts.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Accounts API artifact ID: $ART_ID"
+
+  # Build and test Transactions API
+  build-api-transactions:
+    outputs:
+      ARTIFACT_ID: ${{ steps.parse-transactions-artifact.outputs.id }}
+    steps:
+      - name: Checkout
+        uses: cloudbees-io/checkout@v1
+
+      - name: Run tests
+        kind: test
+        uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
+        run: |
+          set -eu
+          cd apps/api-transactions
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
+
+      - name: Publish API Transactions test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: go
+          folder-name: ${{ cloudbees.workspace }}/apps/api-transactions
+
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.AStack_docker_user }}
+          password: ${{ secrets.AStack_docker_token }}
+
+      - name: Build Docker image
+        kind: build
+        id: kaniko-transactions
+        uses: cloudbees-io/kaniko@v1
+        with:
+          context: .
+          dockerfile: apps/api-transactions/Dockerfile
+          destination: ${{ vars.AStack_docker_user }}/accountstack-api-transactions:${{ cloudbees.scm.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
+
+      - name: Parse Transactions API artifact ID
+        id: parse-transactions-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-transactions.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Transactions API artifact ID: $ART_ID"
+
+  # Build and test Insights API
+  build-api-insights:
+    outputs:
+      ARTIFACT_ID: ${{ steps.parse-insights-artifact.outputs.id }}
+    steps:
+      - name: Checkout
+        uses: cloudbees-io/checkout@v1
+
+      - name: Run tests
+        kind: test
+        uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
+        run: |
+          set -eu
+          cd apps/api-insights
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
+
+      - name: Publish API Insights test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: go
+          folder-name: ${{ cloudbees.workspace }}/apps/api-insights
+
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.AStack_docker_user }}
+          password: ${{ secrets.AStack_docker_token }}
+
+      - name: Build Docker image
+        kind: build
+        id: kaniko-insights
+        uses: cloudbees-io/kaniko@v1
+        with:
+          context: .
+          dockerfile: apps/api-insights/Dockerfile
+          destination: ${{ vars.AStack_docker_user }}/accountstack-api-insights:${{ cloudbees.scm.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
+
+      - name: Parse Insights API artifact ID
+        id: parse-insights-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-insights.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Insights API artifact ID: $ART_ID"
+
+  # Deploy all components to Dev using Helm
+  deploy-dev:
+    if: ${{ cloudbees.scm.branch == 'main' }}
+    environment: account-stack-dev
+    uses: ./.cloudbees/workflows/deploy.yaml
+    needs: [build-web, build-api-accounts, build-api-transactions, build-api-insights]
+    with:
+      web_image: ${{ vars.AStack_docker_user }}/accountstack-web:${{ cloudbees.scm.sha }}
+      api_accounts_image: ${{ vars.AStack_docker_user }}/accountstack-api-accounts:${{ cloudbees.scm.sha }}
+      api_transactions_image: ${{ vars.AStack_docker_user }}/accountstack-api-transactions:${{ cloudbees.scm.sha }}
+      api_insights_image: ${{ vars.AStack_docker_user }}/accountstack-api-insights:${{ cloudbees.scm.sha }}
+      web_artifact_id: ${{ needs.build-web.outputs.ARTIFACT_ID }}
+      api_accounts_artifact_id: ${{ needs.build-api-accounts.outputs.ARTIFACT_ID }}
+      api_transactions_artifact_id: ${{ needs.build-api-transactions.outputs.ARTIFACT_ID }}
+      api_insights_artifact_id: ${{ needs.build-api-insights.outputs.ARTIFACT_ID }}
+      environment_name: account-stack-dev
+      repository: ${{ cloudbees.scm.repository }}
+      base_domain: accountstack.se-main-demo.sa-demo.beescloud.com
+      commit_sha: ${{ cloudbees.scm.sha }}
+    secrets: inherit

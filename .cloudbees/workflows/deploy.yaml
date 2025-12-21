@@ -1,0 +1,296 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Deploy AccountStack
+
+on:
+  workflow_call:
+    inputs:
+      web_image:
+        type: string
+        required: true
+      api_accounts_image:
+        type: string
+        required: true
+      api_transactions_image:
+        type: string
+        required: true
+      api_insights_image:
+        type: string
+        required: true
+      web_artifact_id:
+        type: string
+        required: true
+      api_accounts_artifact_id:
+        type: string
+        required: true
+      api_transactions_artifact_id:
+        type: string
+        required: true
+      api_insights_artifact_id:
+        type: string
+        required: true
+      environment_name:
+        type: string
+        required: true
+      commit_sha:
+        type: string
+        required: true
+      repository:
+        type: string
+        required: true
+      base_domain:
+        type: string
+        required: false
+        default: "accountstack.se-main-demo.sa-demo.beescloud.com"
+
+jobs:
+  deploy:
+    environment: ${{ inputs.environment_name }}
+
+    steps:
+      - name: Checkout
+        uses: cloudbees-io/checkout@v1
+
+      - name: Set kubeconfig
+        uses: guru-actions/kubeconfig@1.16
+        with:
+          secname: ${{ secrets.KUBECONFIG }}
+
+      - name: Extract organization from repository
+        id: org
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          REPOSITORY: ${{ inputs.repository }}
+        run: |
+          set -eu
+          # Extract owner from repository (format: owner/repo)
+          ORG=$(echo "$REPOSITORY" | cut -d'/' -f1)
+          echo "Organization: $ORG"
+          printf '%s' "$ORG" > "$CLOUDBEES_OUTPUTS/name"
+
+      - name: Build deployment path and parse images
+        id: path
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          ORG: ${{ steps.org.outputs.name }}
+          NAMESPACE: ${{ inputs.environment_name }}
+          WEB_IMAGE: ${{ inputs.web_image }}
+          API_ACCOUNTS_IMAGE: ${{ inputs.api_accounts_image }}
+          API_TRANSACTIONS_IMAGE: ${{ inputs.api_transactions_image }}
+          API_INSIGHTS_IMAGE: ${{ inputs.api_insights_image }}
+        run: |
+          set -eu
+          # Build path prefix: /org/env
+          PATH_PREFIX="/${ORG}/${NAMESPACE}"
+          printf '%s' "$PATH_PREFIX" > "$CLOUDBEES_OUTPUTS/prefix"
+          echo "Path prefix: $PATH_PREFIX"
+
+          # Parse image repositories and tags
+          # Format: repository:tag -> split into repo and tag
+          echo "${WEB_IMAGE%:*}" > "$CLOUDBEES_OUTPUTS/web_repo"
+          echo "${WEB_IMAGE##*:}" > "$CLOUDBEES_OUTPUTS/web_tag"
+
+          echo "${API_ACCOUNTS_IMAGE%:*}" > "$CLOUDBEES_OUTPUTS/api_accounts_repo"
+          echo "${API_ACCOUNTS_IMAGE##*:}" > "$CLOUDBEES_OUTPUTS/api_accounts_tag"
+
+          echo "${API_TRANSACTIONS_IMAGE%:*}" > "$CLOUDBEES_OUTPUTS/api_transactions_repo"
+          echo "${API_TRANSACTIONS_IMAGE##*:}" > "$CLOUDBEES_OUTPUTS/api_transactions_tag"
+
+          echo "${API_INSIGHTS_IMAGE%:*}" > "$CLOUDBEES_OUTPUTS/api_insights_repo"
+          echo "${API_INSIGHTS_IMAGE##*:}" > "$CLOUDBEES_OUTPUTS/api_insights_tag"
+
+      - name: Deploy with Helm
+        kind: deploy
+        uses: cloudbees-io/helm-install@v1
+        with:
+          chart-location: ${{ cloudbees.workspace }}/helm/accountstack
+          release-name: accountstack
+          namespace: ${{ inputs.environment_name }}
+          wait: true
+          timeout: 10m
+          values: |
+            deployment:
+              baseDomain: ${{ inputs.base_domain }}
+              organizationName: ${{ steps.org.outputs.name }}
+              environmentName: ${{ inputs.environment_name }}
+
+            cloudbees:
+              fmKey: ${{ secrets.FM_KEY || 'local-mode' }}
+              environment: production
+
+            featureFlags:
+              enabled: true
+              createSecret: true
+              fmKey: ${{ secrets.FM_KEY || 'local-mode' }}
+
+            web:
+              enabled: true
+              replicaCount: 1
+              image:
+                repository: ${{ steps.path.outputs.web_repo }}
+                tag: ${{ steps.path.outputs.web_tag }}
+                pullPolicy: Always
+              ingress:
+                enabled: true
+                className: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: letsencrypt-prod
+                hosts:
+                  - host: ${{ inputs.base_domain }}
+                    paths:
+                      - path: ${{ steps.path.outputs.prefix }}
+                        pathType: Prefix
+                tls:
+                  - secretName: accountstack-tls
+                    hosts:
+                      - ${{ inputs.base_domain }}
+
+            apiAccounts:
+              enabled: true
+              replicaCount: 1
+              image:
+                repository: ${{ steps.path.outputs.api_accounts_repo }}
+                tag: ${{ steps.path.outputs.api_accounts_tag }}
+                pullPolicy: Always
+
+            apiTransactions:
+              enabled: true
+              replicaCount: 1
+              image:
+                repository: ${{ steps.path.outputs.api_transactions_repo }}
+                tag: ${{ steps.path.outputs.api_transactions_tag }}
+                pullPolicy: Always
+
+            apiInsights:
+              enabled: true
+              replicaCount: 1
+              image:
+                repository: ${{ steps.path.outputs.api_insights_repo }}
+                tag: ${{ steps.path.outputs.api_insights_tag }}
+                pullPolicy: Always
+
+      - name: Calculate version and metadata
+        id: metadata
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          ENVIRONMENT_NAME: ${{ inputs.environment_name }}
+        run: |
+          set -eu
+
+          # Short SHA (12 chars)
+          SHORT_SHA=$(echo "$COMMIT_SHA" | cut -c1-12)
+          printf '%s' "$SHORT_SHA" > "$CLOUDBEES_OUTPUTS/sha12"
+          echo "Short SHA: $SHORT_SHA"
+
+          # Short version (first 7 chars of SHA)
+          SHORT_VER=$(echo "$COMMIT_SHA" | cut -c1-7)
+          printf '%s' "$SHORT_VER" > "$CLOUDBEES_OUTPUTS/ver"
+          echo "Version: $SHORT_VER"
+
+          # Timestamp
+          TIMESTAMP=$(date -u +%Y%m%d%H%M%S)
+          printf '%s' "$TIMESTAMP" > "$CLOUDBEES_OUTPUTS/ts"
+          echo "Timestamp: $TIMESTAMP"
+
+          # Environment code (shortened for labels)
+          case "$ENVIRONMENT_NAME" in
+            account-stack-dev)
+              ENV_CODE="dev"
+              ;;
+            account-stack-develop)
+              ENV_CODE="develop"
+              ;;
+            account-stack-staging)
+              ENV_CODE="staging"
+              ;;
+            account-stack-prod)
+              ENV_CODE="prod"
+              ;;
+            *)
+              # Use first 8 chars of environment name
+              ENV_CODE=$(echo "$ENVIRONMENT_NAME" | cut -c1-8)
+              ;;
+          esac
+          printf '%s' "$ENV_CODE" > "$CLOUDBEES_OUTPUTS/code"
+          echo "Environment code: $ENV_CODE"
+
+      - name: Register Web artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.web_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Register API Accounts artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.api_accounts_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Register API Transactions artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.api_transactions_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Register API Insights artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.api_insights_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Publish deployment evidence
+        kind: deploy
+        uses: cloudbees-io/publish-evidence-item@v1
+        with:
+          format: MARKDOWN
+          content: |
+            ## Deployed: AccountStack (All Components)
+
+            **Environment:** `${{ inputs.environment_name }}`
+            **Repository:** `${{ inputs.repository }}`
+            **Commit:** `${{ inputs.commit_sha }}`
+            **URL:** [https://${{ inputs.base_domain }}${{ steps.path.outputs.prefix }}](https://${{ inputs.base_domain }}${{ steps.path.outputs.prefix }})
+
+            ### Components Deployed
+            - **Web UI:** `${{ inputs.web_image }}`
+            - **API Accounts:** `${{ inputs.api_accounts_image }}`
+            - **API Transactions:** `${{ inputs.api_transactions_image }}`
+            - **API Insights:** `${{ inputs.api_insights_image }}`
+
+            ### Deployment Details
+            - Kubernetes namespace: `${{ inputs.environment_name }}`
+            - Helm release: `accountstack`
+            - Organization: `${{ steps.org.outputs.name }}`
+            - Public ingress with SSL (cert-manager + LetsEncrypt)
+            - Path-based routing: `${{ steps.path.outputs.prefix }}`
+            - Deployment method: CloudBees Helm Install Action
+            - Feature Management Key: ${{ secrets.FM_KEY && '✓ from secret' || '✗ using local-mode' }}
+            - Deployment successful ✓

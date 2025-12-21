@@ -1,0 +1,185 @@
+# Default values for accountstack
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Deployment configuration for path-based routing
+deployment:
+  # Base domain for ingress (e.g., accountstack.se-main-demo.sa-demo.beescloud.com)
+  baseDomain: "accountstack.se-main-demo.sa-demo.beescloud.com"
+  # Organization/instance name (e.g., CB-AccountStack) - used for URL path /{org}/{env}
+  organizationName: ""
+  # Environment name (e.g., account-stack-dev) - used for URL path /{org}/{env}
+  environmentName: ""
+
+# Authentication configuration
+auth:
+  # JWT secret for token signing (MUST be changed in production)
+  jwtSecret: "dev-secret-key-change-in-production-use-a-long-random-string"
+  # Demo credentials (change in production)
+  username: "demo@accountstack.com"
+  password: "demo123"
+
+# CloudBees Feature Management
+cloudbees:
+  # API key for CloudBees Feature Management (used by backend APIs)
+  fmKey: "local-mode"
+  environment: "production"
+
+# Feature Management for Web UI (runtime config)
+featureFlags:
+  enabled: true
+  secretName: accountstack-fm
+  secretKey: FM_KEY
+  mountPath: /usr/share/nginx/html/config
+  fileName: fm.json
+  createSecret: true
+  fmKey: ""  # Will be set by deploy workflow
+
+# Web UI (React)
+web:
+  enabled: true
+  replicaCount: 2
+  # Show demo credentials on login page (set to false in production)
+  showDemoCredentials: false
+  image:
+    repository: accountstack/web
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Hosts configuration - will be populated by workflow based on deployment.baseDomain
+    hosts: []
+    # Example:
+    # - host: accountstack.se-main-demo.sa-demo.beescloud.com
+    #   paths:
+    #     - path: /CB-AccountStack/account-stack-dev
+    #       pathType: Prefix
+    tls: []
+    # Example:
+    # - secretName: accountstack-tls
+    #   hosts:
+    #     - accountstack.se-main-demo.sa-demo.beescloud.com
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Accounts API (Go)
+apiAccounts:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: accountstack/api-accounts
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8001
+    targetPort: 8001
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8001
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8001
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Transactions API (Go)
+apiTransactions:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: accountstack/api-transactions
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8002
+    targetPort: 8002
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8002
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8002
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Insights API (Go)
+apiInsights:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: accountstack/api-insights
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8003
+    targetPort: 8003
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8003
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8003
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Node selector for scheduling pods
+nodeSelector: {}
+
+# Tolerations for scheduling pods
+tolerations: []
+
+# Affinity rules for scheduling pods
+affinity: {}

@@ -1,0 +1,82 @@
+{{- if .Values.apiTransactions.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "accountstack.fullname" . }}-api-transactions
+  labels:
+    {{- include "accountstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-transactions
+spec:
+  replicas: {{ .Values.apiTransactions.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "accountstack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api-transactions
+  template:
+    metadata:
+      labels:
+        {{- include "accountstack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api-transactions
+    spec:
+      containers:
+      - name: api-transactions
+        image: "{{ .Values.apiTransactions.image.repository }}:{{ .Values.apiTransactions.image.tag }}"
+        imagePullPolicy: {{ .Values.apiTransactions.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.apiTransactions.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "{{ .Values.apiTransactions.service.targetPort }}"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "accountstack.fullname" . }}-auth
+              key: jwt-secret
+        - name: CLOUDBEES_FM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "accountstack.fullname" . }}-auth
+              key: cloudbees-fm-key
+        - name: CLOUDBEES_FM_ENVIRONMENT
+          value: {{ .Values.cloudbees.environment | quote }}
+        - name: LOG_LEVEL
+          value: "info"
+        livenessProbe:
+          {{- toYaml .Values.apiTransactions.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.apiTransactions.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.apiTransactions.resources | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-transactions
+  labels:
+    {{- include "accountstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-transactions
+spec:
+  type: {{ .Values.apiTransactions.service.type }}
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "accountstack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api-transactions
+{{- end }}

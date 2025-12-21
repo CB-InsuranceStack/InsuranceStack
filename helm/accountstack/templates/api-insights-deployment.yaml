@@ -1,0 +1,82 @@
+{{- if .Values.apiInsights.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "accountstack.fullname" . }}-api-insights
+  labels:
+    {{- include "accountstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-insights
+spec:
+  replicas: {{ .Values.apiInsights.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "accountstack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api-insights
+  template:
+    metadata:
+      labels:
+        {{- include "accountstack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api-insights
+    spec:
+      containers:
+      - name: api-insights
+        image: "{{ .Values.apiInsights.image.repository }}:{{ .Values.apiInsights.image.tag }}"
+        imagePullPolicy: {{ .Values.apiInsights.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.apiInsights.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "{{ .Values.apiInsights.service.targetPort }}"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "accountstack.fullname" . }}-auth
+              key: jwt-secret
+        - name: CLOUDBEES_FM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "accountstack.fullname" . }}-auth
+              key: cloudbees-fm-key
+        - name: CLOUDBEES_FM_ENVIRONMENT
+          value: {{ .Values.cloudbees.environment | quote }}
+        - name: LOG_LEVEL
+          value: "info"
+        livenessProbe:
+          {{- toYaml .Values.apiInsights.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.apiInsights.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.apiInsights.resources | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-insights
+  labels:
+    {{- include "accountstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-insights
+spec:
+  type: {{ .Values.apiInsights.service.type }}
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "accountstack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api-insights
+{{- end }}
