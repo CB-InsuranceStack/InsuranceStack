@@ -374,7 +374,7 @@ CloudBees Feature Management (Rox SDK) is integrated for runtime feature togglin
 
 ## License
 
-Copyright 2024 CB-AccountStack
+Copyright 2024 CB-InsuranceStack
 
 ## Quick Start
 

@@ -85,7 +85,7 @@ VITE_ROX_API_KEY=your_api_key_here
 **For Docker Compose**, create `.env` in the project root:
 
 ```bash
-# In /Users/you/AccountStack/.env (project root)
+# In /Users/you/InsuranceStack/.env (project root)
 CLOUDBEES_FM_API_KEY=your_api_key_here
 ```
 

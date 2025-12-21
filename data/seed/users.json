@@ -1,7 +1,7 @@
 [
   {
     "id": "user-001",
-    "email": "demo@accountstack.com",
+    "email": "demo@insurancestack.com",
     "name": "Demo User",
     "firstName": "Demo",
     "lastName": "User",
@@ -11,7 +11,7 @@
   },
   {
     "id": "user-002",
-    "email": "sarah.chen@accountstack.com",
+    "email": "sarah.chen@insurancestack.com",
     "name": "Sarah Chen",
     "firstName": "Sarah",
     "lastName": "Chen",
@@ -21,7 +21,7 @@
   },
   {
     "id": "user-003",
-    "email": "francois.dubois@accountstack.com",
+    "email": "francois.dubois@insurancestack.com",
     "name": "François Dubois",
     "firstName": "François",
     "lastName": "Dubois",

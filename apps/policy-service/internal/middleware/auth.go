@@ -25,7 +25,7 @@ func AuthMiddleware(logger *logrus.Logger) func(http.Handler) http.Handler {
 			// Extract customer ID from X-User-ID header (demo purposes)
 			customerID := r.Header.Get("X-User-ID")
 			if customerID == "" {
-				customerID = "customer-001" // Default for demo
+				customerID = "cust-001" // Default for demo
 			}
 
 			// Add customer ID to request context
@@ -43,7 +43,7 @@ func AuthMiddleware(logger *logrus.Logger) func(http.Handler) http.Handler {
 func GetUserID(r *http.Request) string {
 	customerID, ok := r.Context().Value(customerIDKey).(string)
 	if !ok {
-		return "customer-001" // Default fallback
+		return "cust-001" // Default fallback
 	}
 	return customerID
 }

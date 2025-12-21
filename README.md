@@ -218,7 +218,7 @@ Time: ~2-4 hours (with approvals)
 - Promotion workflow demonstrations
 - Executive demonstrations of regulated CI/CD
 
-**Based on**: AccountStack reference architecture
+**Based on**: InsuranceStack reference architecture
 **Related**: SquidStack (for deeper platform demonstrations)
 
 ## Non-Goals

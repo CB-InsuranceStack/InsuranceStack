@@ -31,7 +31,7 @@ func NewAuthHandler(logger *logrus.Logger) *AuthHandler {
 	// Get credentials from environment
 	username := os.Getenv("AUTH_USERNAME")
 	if username == "" {
-		username = "demo@accountstack.com"
+		username = "demo@insurancestack.com"
 	}
 
 	password := os.Getenv("AUTH_PASSWORD")
