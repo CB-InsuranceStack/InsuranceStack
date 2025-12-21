@@ -1,0 +1,75 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+
+name: InsuranceStack - Deploy with Governance
+
+on:
+  workflow_dispatch
+
+jobs:
+  # FAST-PATH: pricing-engine - No approval required
+  deploy-pricing-engine:
+    steps:
+      - name: Deploy Pricing Engine (FAST-PATH)
+        uses: docker://alpine:3.20
+        run: |
+          echo "FAST-PATH DEPLOYMENT: pricing-engine"
+          echo "No approval required - deploying immediately"
+          echo "Deployed successfully"
+
+  # STANDARD: policy-service, customer-service - Team approval
+  deploy-policy-service:
+    steps:
+      - name: Request approval for Policy Service
+        uses: cloudbees-io/wait-for-approval@v1
+        with:
+          message: "Deploy policy-service? (STANDARD governance)"
+          approvers: "engineering-leads"
+
+      - name: Deploy Policy Service
+        uses: docker://alpine:3.20
+        run: |
+          echo "STANDARD DEPLOYMENT: policy-service"
+          echo "Deployed with team approval"
+
+  # GOVERNED: claims-service - CAB approval
+  deploy-claims-service:
+    steps:
+      - name: Request CAB approval for Claims Service
+        uses: cloudbees-io/wait-for-approval@v1
+        with:
+          message: "Deploy claims-service? (GOVERNED - requires CAB approval)"
+          approvers: "change-advisory-board,engineering-leads"
+          minimum-approvals: 2
+
+      - name: Deploy Claims Service
+        uses: docker://alpine:3.20
+        run: |
+          echo "GOVERNED DEPLOYMENT: claims-service"
+          echo "Deployed with CAB approval"
+
+  # CRITICAL: payments-service - Finance + Engineering approval
+  deploy-payments-service:
+    steps:
+      - name: Security scan for Payments Service
+        uses: docker://alpine:3.20
+        run: |
+          echo "Running security and compliance checks..."
+          echo "Security scan: PASS"
+          echo "PCI DSS compliance: PASS"
+          echo "SOX compliance: PASS"
+
+      - name: Request Finance + Engineering approval
+        uses: cloudbees-io/wait-for-approval@v1
+        with:
+          message: "CRITICAL: Deploy payments-service? (Requires Finance + Engineering + CAB)"
+          approvers: "finance-team,engineering-leads,change-advisory-board"
+          minimum-approvals: 3
+
+      - name: Deploy Payments Service
+        uses: docker://alpine:3.20
+        run: |
+          echo "HIGHEST RISK DEPLOYMENT: payments-service"
+          echo "Deployed with maximum governance"
+          echo "Enhanced monitoring: ACTIVE"
+          echo "Fraud detection: ACTIVE"

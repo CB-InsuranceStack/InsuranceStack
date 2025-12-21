@@ -10,10 +10,9 @@ import (
 
 // Flags holds all feature flags for the application
 type Flags struct {
-	insightsV2    bool
-	alertsEnabled bool
-	mu            sync.RWMutex
-	logger        *logrus.Logger
+	dynamicRates bool
+	mu           sync.RWMutex
+	logger       *logrus.Logger
 }
 
 var flags *Flags
@@ -29,28 +28,17 @@ func Initialize(apiKey string, logger *logrus.Logger) (*Flags, error) {
 	}
 
 	// Load feature flags from environment variables
-	// api.insightsV2 (default: false) - use new insights calculation algorithm
-	insightsV2Str := os.Getenv("FEATURE_INSIGHTS_V2")
-	if insightsV2Str != "" {
-		insightsV2, err := strconv.ParseBool(insightsV2Str)
+	// pricing.dynamicRates (default: false) - enable real-time rate adjustments
+	dynamicRatesStr := os.Getenv("FEATURE_DYNAMIC_RATES")
+	if dynamicRatesStr != "" {
+		dynamicRates, err := strconv.ParseBool(dynamicRatesStr)
 		if err == nil {
-			flags.insightsV2 = insightsV2
-		}
-	}
-
-	// api.alertsEnabled (default: true) - enable alert generation
-	flags.alertsEnabled = true // Default to enabled
-	alertsEnabledStr := os.Getenv("FEATURE_ALERTS_ENABLED")
-	if alertsEnabledStr != "" {
-		alertsEnabled, err := strconv.ParseBool(alertsEnabledStr)
-		if err == nil {
-			flags.alertsEnabled = alertsEnabled
+			flags.dynamicRates = dynamicRates
 		}
 	}
 
 	logger.WithFields(logrus.Fields{
-		"insightsV2":    flags.insightsV2,
-		"alertsEnabled": flags.alertsEnabled,
+		"dynamicRates": flags.dynamicRates,
 	}).Info("Feature flags initialized")
 
 	if apiKey != "" && apiKey != "dev-mode" {
@@ -65,46 +53,25 @@ func GetFlags() *Flags {
 	return flags
 }
 
-// IsInsightsV2Enabled returns whether the V2 insights algorithm should be used
-func (f *Flags) IsInsightsV2Enabled() bool {
+// IsDynamicRatesEnabled returns whether dynamic rates are enabled
+func (f *Flags) IsDynamicRatesEnabled() bool {
 	if f == nil {
 		return false
 	}
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.insightsV2
+	return f.dynamicRates
 }
 
-// IsAlertsEnabled returns whether alerts are enabled
-func (f *Flags) IsAlertsEnabled() bool {
-	if f == nil {
-		return true // Default to enabled
-	}
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.alertsEnabled
-}
-
-// SetInsightsV2 sets the insights V2 flag (for testing/admin purposes)
-func (f *Flags) SetInsightsV2(enabled bool) {
+// SetDynamicRates sets the dynamic rates flag (for testing/admin purposes)
+func (f *Flags) SetDynamicRates(enabled bool) {
 	if f == nil {
 		return
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.insightsV2 = enabled
-	f.logger.WithField("insightsV2", enabled).Info("Feature flag updated")
-}
-
-// SetAlertsEnabled sets the alerts enabled flag (for testing/admin purposes)
-func (f *Flags) SetAlertsEnabled(enabled bool) {
-	if f == nil {
-		return
-	}
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.alertsEnabled = enabled
-	f.logger.WithField("alertsEnabled", enabled).Info("Feature flag updated")
+	f.dynamicRates = enabled
+	f.logger.WithField("dynamicRates", enabled).Info("Feature flag updated")
 }
 
 // Shutdown gracefully shuts down the feature management system
@@ -129,9 +96,8 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
 
 3. Replace the Flags struct:
    type Flags struct {
-       InsightsV2    *core.RoxFlag
-       AlertsEnabled *core.RoxFlag
-       logger        *logrus.Logger
+       DynamicRates *core.RoxFlag
+       logger       *logrus.Logger
    }
 
 4. Update Initialize function:
@@ -140,14 +106,11 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
            logger: logger,
        }
 
-       // Register feature flag: api.insightsV2 (default: false)
-       flags.InsightsV2 = core.NewRoxFlag(false)
-
-       // Register feature flag: api.alertsEnabled (default: true)
-       flags.AlertsEnabled = core.NewRoxFlag(true)
+       // Register feature flag: pricing.dynamicRates (default: false)
+       flags.DynamicRates = core.NewRoxFlag(false)
 
        // Register with CloudBees
-       core.Register("api", flags)
+       core.Register("pricing", flags)
 
        // Setup Rox with API key
        options := core.NewRoxOptions(core.RoxOptionsBuilder{})
@@ -164,23 +127,15 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
        return flags, nil
    }
 
-5. Update IsInsightsV2Enabled:
-   func (f *Flags) IsInsightsV2Enabled() bool {
-       if f == nil || f.InsightsV2 == nil {
+5. Update IsDynamicRatesEnabled:
+   func (f *Flags) IsDynamicRatesEnabled() bool {
+       if f == nil || f.DynamicRates == nil {
            return false
        }
-       return f.InsightsV2.IsEnabled(nil)
+       return f.DynamicRates.IsEnabled(nil)
    }
 
-6. Update IsAlertsEnabled:
-   func (f *Flags) IsAlertsEnabled() bool {
-       if f == nil || f.AlertsEnabled == nil {
-           return true
-       }
-       return f.AlertsEnabled.IsEnabled(nil)
-   }
-
-7. Update Shutdown:
+6. Update Shutdown:
    func Shutdown() {
        if flags != nil {
            core.Shutdown()
@@ -189,12 +144,10 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
    }
 
 Feature Flags:
-- api.insightsV2 (default: false) - use new insights calculation algorithm
-- api.alertsEnabled (default: true) - enable alert generation
+- pricing.dynamicRates (default: false) - enable real-time rate adjustments
 
 Environment Variables (Current Implementation):
-- FEATURE_INSIGHTS_V2: Set to "true" to enable V2 algorithm
-- FEATURE_ALERTS_ENABLED: Set to "false" to disable alerts
+- FEATURE_DYNAMIC_RATES: Set to "true" to enable dynamic pricing
 
 For more information, see: https://docs.cloudbees.com/docs/cloudbees-feature-management/latest/
 */

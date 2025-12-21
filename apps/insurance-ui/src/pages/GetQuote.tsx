@@ -1,0 +1,391 @@
+import { useState } from 'react';
+import { DollarSign, Car, Home, Heart, Activity, Shield, CheckCircle } from 'lucide-react';
+import AlertBanner from '../components/AlertBanner';
+
+export default function GetQuote() {
+  const [step, setStep] = useState(1);
+  const [policyType, setPolicyType] = useState<string>('');
+  const [formData, setFormData] = useState({
+    coverage: '',
+    deductible: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+  });
+  const [quoteResult, setQuoteResult] = useState<{
+    premium: number;
+    coverage: number;
+    deductible: number;
+  } | null>(null);
+
+  const policyTypes = [
+    {
+      id: 'auto',
+      name: 'Auto Insurance',
+      icon: Car,
+      description: 'Protect your vehicle and drive with confidence',
+      color: 'bg-blue-100 text-blue-600',
+    },
+    {
+      id: 'home',
+      name: 'Home Insurance',
+      icon: Home,
+      description: 'Safeguard your home and belongings',
+      color: 'bg-green-100 text-green-600',
+    },
+    {
+      id: 'life',
+      name: 'Life Insurance',
+      icon: Heart,
+      description: 'Secure your family\'s financial future',
+      color: 'bg-purple-100 text-purple-600',
+    },
+    {
+      id: 'health',
+      name: 'Health Insurance',
+      icon: Activity,
+      description: 'Comprehensive healthcare coverage',
+      color: 'bg-red-100 text-red-600',
+    },
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleGetQuote = () => {
+    // Simulate quote calculation
+    const coverage = parseFloat(formData.coverage) || 100000;
+    const deductible = parseFloat(formData.deductible) || 1000;
+    const premium = (coverage * 0.001) + (deductible * 0.01);
+
+    setQuoteResult({
+      premium: Math.round(premium * 100) / 100,
+      coverage,
+      deductible,
+    });
+    setStep(3);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Get a Quote</h1>
+        <p className="text-gray-600 mt-1">Find the perfect insurance coverage for your needs.</p>
+      </div>
+
+      {/* Progress Steps */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between">
+          {[
+            { num: 1, label: 'Select Type' },
+            { num: 2, label: 'Enter Details' },
+            { num: 3, label: 'Get Quote' },
+          ].map((s, idx) => (
+            <div key={s.num} className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${
+                  step >= s.num
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {step > s.num ? <CheckCircle className="w-6 h-6" /> : s.num}
+              </div>
+              <span
+                className={`ml-2 font-medium ${
+                  step >= s.num ? 'text-gray-900' : 'text-gray-500'
+                }`}
+              >
+                {s.label}
+              </span>
+              {idx < 2 && (
+                <div
+                  className={`w-16 h-1 mx-4 ${
+                    step > s.num ? 'bg-brand-500' : 'bg-gray-200'
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Step 1: Select Policy Type */}
+      {step === 1 && (
+        <div className="space-y-6">
+          <AlertBanner
+            type="info"
+            title="Choose Your Coverage"
+            message="Select the type of insurance coverage you need to get started."
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {policyTypes.map((type) => {
+              const Icon = type.icon;
+              return (
+                <div
+                  key={type.id}
+                  onClick={() => setPolicyType(type.id)}
+                  className={`card p-8 cursor-pointer transition-all hover:shadow-lg ${
+                    policyType === type.id ? 'ring-2 ring-brand-500' : ''
+                  }`}
+                >
+                  <div className={`${type.color} rounded-lg p-4 w-fit mb-4`}>
+                    <Icon className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{type.name}</h3>
+                  <p className="text-gray-600">{type.description}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setStep(2)}
+              disabled={!policyType}
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Enter Details */}
+      {step === 2 && (
+        <div className="space-y-6">
+          <div className="card p-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Coverage Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Coverage Amount
+                </label>
+                <select
+                  name="coverage"
+                  value={formData.coverage}
+                  onChange={handleInputChange}
+                  className="input w-full"
+                  required
+                >
+                  <option value="">Select coverage amount</option>
+                  <option value="50000">$50,000</option>
+                  <option value="100000">$100,000</option>
+                  <option value="250000">$250,000</option>
+                  <option value="500000">$500,000</option>
+                  <option value="1000000">$1,000,000</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Deductible
+                </label>
+                <select
+                  name="deductible"
+                  value={formData.deductible}
+                  onChange={handleInputChange}
+                  className="input w-full"
+                  required
+                >
+                  <option value="">Select deductible</option>
+                  <option value="500">$500</option>
+                  <option value="1000">$1,000</option>
+                  <option value="2500">$2,500</option>
+                  <option value="5000">$5,000</option>
+                </select>
+              </div>
+            </div>
+
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 mt-8">Personal Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className="input w-full"
+                  placeholder="John"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className="input w-full"
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="input w-full"
+                  placeholder="john.doe@example.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="input w-full"
+                  placeholder="(555) 123-4567"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between">
+            <button onClick={() => setStep(1)} className="btn-secondary">
+              Back
+            </button>
+            <button
+              onClick={handleGetQuote}
+              disabled={
+                !formData.coverage ||
+                !formData.deductible ||
+                !formData.firstName ||
+                !formData.lastName ||
+                !formData.email
+              }
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Get Quote
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Quote Result */}
+      {step === 3 && quoteResult && (
+        <div className="space-y-6">
+          <AlertBanner
+            type="info"
+            title="Your Quote is Ready!"
+            message="Review your quote below and accept it to create a new policy."
+          />
+
+          <div className="card p-8">
+            <div className="text-center mb-8">
+              <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-10 h-10 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Your {policyTypes.find((t) => t.id === policyType)?.name} Quote
+              </h2>
+              <p className="text-gray-600">Quote valid for 30 days</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="card p-6 bg-gray-50">
+                <p className="text-sm text-gray-600 font-medium mb-2">Monthly Premium</p>
+                <p className="text-3xl font-bold text-brand-600">
+                  {formatCurrency(quoteResult.premium)}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">per month</p>
+              </div>
+
+              <div className="card p-6 bg-gray-50">
+                <p className="text-sm text-gray-600 font-medium mb-2">Coverage Amount</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {formatCurrency(quoteResult.coverage)}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">protection</p>
+              </div>
+
+              <div className="card p-6 bg-gray-50">
+                <p className="text-sm text-gray-600 font-medium mb-2">Deductible</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {formatCurrency(quoteResult.deductible)}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">per claim</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <h3 className="text-lg font-semibold text-gray-900">Coverage Includes:</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
+                  <span className="text-gray-700">Comprehensive coverage up to policy limits</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
+                  <span className="text-gray-700">24/7 customer support and claims assistance</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
+                  <span className="text-gray-700">Fast claim processing and payment</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
+                  <span className="text-gray-700">No hidden fees or surprise charges</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => {
+                  setStep(1);
+                  setPolicyType('');
+                  setFormData({
+                    coverage: '',
+                    deductible: '',
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    phone: '',
+                  });
+                  setQuoteResult(null);
+                }}
+                className="btn-secondary flex-1"
+              >
+                Get Another Quote
+              </button>
+              <button className="btn-primary flex-1">
+                Accept Quote & Create Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

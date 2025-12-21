@@ -1,10 +1,12 @@
-// API service using Axios for AccountStack
+// API service using Axios for InsuranceStack
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type {
   User,
-  Account,
-  Transaction,
-  Insight,
+  Customer,
+  Policy,
+  Claim,
+  Payment,
+  Quote,
 } from '../types';
 
 // Create axios instance with base configuration
@@ -57,92 +59,150 @@ apiClient.interceptors.response.use(
 class ApiService {
   // User endpoints
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<User>('accounts/me');
+    const response = await apiClient.get<User>('customers/me');
     return response.data;
   }
 
-  // Account endpoints
-  async getAccounts(): Promise<Account[]> {
-    const response = await apiClient.get<Account[]>('accounts');
+  // Customer endpoints
+  async getCustomers(): Promise<Customer[]> {
+    const response = await apiClient.get<Customer[]>('customers');
     return response.data;
   }
 
-  async getAccount(accountId: string): Promise<Account> {
-    const response = await apiClient.get<Account>(`accounts/${accountId}`);
+  async getCustomer(customerId: string): Promise<Customer> {
+    const response = await apiClient.get<Customer>(`customers/${customerId}`);
     return response.data;
   }
 
-  async createAccount(accountData: Partial<Account>): Promise<Account> {
-    const response = await apiClient.post<Account>('accounts', accountData);
+  async createCustomer(customerData: Partial<Customer>): Promise<Customer> {
+    const response = await apiClient.post<Customer>('customers', customerData);
     return response.data;
   }
 
-  async updateAccount(accountId: string, accountData: Partial<Account>): Promise<Account> {
-    const response = await apiClient.put<Account>(
-      `accounts/${accountId}`,
-      accountData
+  async updateCustomer(customerId: string, customerData: Partial<Customer>): Promise<Customer> {
+    const response = await apiClient.put<Customer>(
+      `customers/${customerId}`,
+      customerData
     );
     return response.data;
   }
 
-  async deleteAccount(accountId: string): Promise<void> {
-    await apiClient.delete(`accounts/${accountId}`);
+  async deleteCustomer(customerId: string): Promise<void> {
+    await apiClient.delete(`customers/${customerId}`);
   }
 
-  // Transaction endpoints
-  async getTransactions(params?: {
-    accountId?: string;
-    type?: string;
-    category?: string;
+  // Policy endpoints
+  async getPolicies(params?: {
+    customerId?: string;
+    policyType?: string;
+    status?: string;
+  }): Promise<Policy[]> {
+    const response = await apiClient.get<Policy[]>('policies', {
+      params,
+    });
+    return response.data;
+  }
+
+  async getPolicy(policyId: string): Promise<Policy> {
+    const response = await apiClient.get<Policy>(`policies/${policyId}`);
+    return response.data;
+  }
+
+  async createPolicy(policyData: Partial<Policy>): Promise<Policy> {
+    const response = await apiClient.post<Policy>('policies', policyData);
+    return response.data;
+  }
+
+  async updatePolicy(policyId: string, policyData: Partial<Policy>): Promise<Policy> {
+    const response = await apiClient.put<Policy>(
+      `policies/${policyId}`,
+      policyData
+    );
+    return response.data;
+  }
+
+  async deletePolicy(policyId: string): Promise<void> {
+    await apiClient.delete(`policies/${policyId}`);
+  }
+
+  // Claim endpoints
+  async getClaims(params?: {
+    policyId?: string;
+    status?: string;
     startDate?: string;
     endDate?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<Transaction[]> {
-    const response = await apiClient.get<Transaction[]>('transactions', {
+  }): Promise<Claim[]> {
+    const response = await apiClient.get<Claim[]>('claims', {
       params,
     });
     return response.data;
   }
 
-  async getTransaction(transactionId: string): Promise<Transaction> {
-    const response = await apiClient.get<Transaction>(
-      `transactions/${transactionId}`
+  async getClaim(claimId: string): Promise<Claim> {
+    const response = await apiClient.get<Claim>(`claims/${claimId}`);
+    return response.data;
+  }
+
+  async createClaim(claimData: Partial<Claim>): Promise<Claim> {
+    const response = await apiClient.post<Claim>('claims', claimData);
+    return response.data;
+  }
+
+  async updateClaim(claimId: string, claimData: Partial<Claim>): Promise<Claim> {
+    const response = await apiClient.put<Claim>(
+      `claims/${claimId}`,
+      claimData
     );
     return response.data;
   }
 
-  async createTransaction(transactionData: Partial<Transaction>): Promise<Transaction> {
-    const response = await apiClient.post<Transaction>(
-      'transactions',
-      transactionData
-    );
-    return response.data;
-  }
-
-  // Insights endpoints
-  async getInsights(params?: {
-    type?: string;
-    severity?: string;
-    dismissed?: boolean;
-  }): Promise<Insight[]> {
-    const response = await apiClient.get<Insight[]>('insights', {
+  // Payment endpoints
+  async getPayments(params?: {
+    policyId?: string;
+    paymentType?: string;
+    status?: string;
+  }): Promise<Payment[]> {
+    const response = await apiClient.get<Payment[]>('payments', {
       params,
     });
     return response.data;
   }
 
-  async getInsight(insightId: string): Promise<Insight> {
-    const response = await apiClient.get<Insight>(`insights/${insightId}`);
+  async getPayment(paymentId: string): Promise<Payment> {
+    const response = await apiClient.get<Payment>(`payments/${paymentId}`);
     return response.data;
   }
 
-  async dismissInsight(insightId: string): Promise<void> {
-    await apiClient.patch(`insights/${insightId}/dismiss`);
+  async createPayment(paymentData: Partial<Payment>): Promise<Payment> {
+    const response = await apiClient.post<Payment>('payments', paymentData);
+    return response.data;
   }
 
-  async takeAction(insightId: string): Promise<void> {
-    await apiClient.post(`insights/${insightId}/action`);
+  // Quote endpoints
+  async getQuotes(params?: {
+    customerId?: string;
+    policyType?: string;
+    status?: string;
+  }): Promise<Quote[]> {
+    const response = await apiClient.get<Quote[]>('quotes', {
+      params,
+    });
+    return response.data;
+  }
+
+  async getQuote(quoteId: string): Promise<Quote> {
+    const response = await apiClient.get<Quote>(`quotes/${quoteId}`);
+    return response.data;
+  }
+
+  async createQuote(quoteData: Partial<Quote>): Promise<Quote> {
+    const response = await apiClient.post<Quote>('quotes', quoteData);
+    return response.data;
+  }
+
+  async acceptQuote(quoteId: string): Promise<Policy> {
+    const response = await apiClient.post<Policy>(`quotes/${quoteId}/accept`);
+    return response.data;
   }
 }
 

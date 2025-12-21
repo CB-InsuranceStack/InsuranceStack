@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, TrendingUp, Menu, X, LogOut } from 'lucide-react';
+import { FileText, AlertCircle, Users, CreditCard, DollarSign, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -19,9 +19,11 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Transactions', href: '/transactions', icon: CreditCard },
-    { name: 'Insights', href: '/insights', icon: TrendingUp },
+    { name: 'Policies', href: '/', icon: FileText },
+    { name: 'Claims', href: '/claims', icon: AlertCircle },
+    { name: 'Customers', href: '/customers', icon: Users },
+    { name: 'Payments', href: '/payments', icon: CreditCard },
+    { name: 'Get Quote', href: '/quote', icon: DollarSign },
   ];
 
   const isActive = (path: string) => {
@@ -41,9 +43,9 @@ export default function Layout({ children }: LayoutProps) {
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">A</span>
+                  <span className="text-white font-bold text-lg">I</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">AccountStack</span>
+                <span className="text-xl font-bold text-gray-900">InsuranceStack</span>
               </Link>
             </div>
 
@@ -153,7 +155,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-500">
-              AccountStack v0.1.0 - Powered by CloudBees Feature Management
+              InsuranceStack v0.1.0 - Powered by CloudBees Feature Management
             </div>
             <div className="flex items-center space-x-6">
               <a href="#" className="text-sm text-gray-500 hover:text-brand-600 transition-colors">

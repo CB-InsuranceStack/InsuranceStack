@@ -1,12 +1,14 @@
-# AccountStack Web Application
+# InsuranceStack Web Application
 
-Modern React-based web application for AccountStack, featuring CloudBees Feature Management integration for dynamic feature control.
+Modern React-based web application for InsuranceStack, featuring CloudBees Feature Management integration for dynamic feature control.
 
 ## Features
 
-- **Dashboard**: Overview of all accounts with real-time balance information
-- **Transactions**: Comprehensive transaction list with advanced filtering
-- **Insights**: AI-powered financial insights and recommendations
+- **Policies**: Manage and view all insurance policies with detailed coverage information
+- **Claims**: Track and manage insurance claims with real-time status updates
+- **Customers**: Customer database management and profile viewing
+- **Payments**: Payment tracking and transaction history
+- **Get Quote**: Interactive quote generation for new insurance policies
 - **Feature Flags**: Dynamic feature control using CloudBees Feature Management (Rox)
 - **Responsive Design**: Mobile-first design with Tailwind CSS
 - **Real-time Updates**: Automatic data refresh with TanStack Query
@@ -33,11 +35,11 @@ The application uses **CloudBees Feature Management** with **fully reactive, rea
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `dashboardCardsV2` | `true` | Enhanced dashboard card design with gradients and better visuals |
-| `insightsV2` | `false` | New insights panel with improved layout and card-based design |
+| `policiesCardsV2` | `true` | Enhanced policy card design with gradients and better visuals |
+| `claimsFiltersV2` | `false` | Advanced filtering options for claims |
 | `alertsBanner` | `true` | Top banner for displaying important alerts and announcements |
-| `transactionsFilters` | `true` | Advanced filtering options for transactions (search, type, category, status) |
-| `killInsights` | `false` | Kill switch to disable the entire insights feature |
+| `quoteWizard` | `true` | Multi-step quote generation wizard |
+| `killCustomers` | `false` | Kill switch to disable the customer management feature |
 
 ### Reactive Pattern
 
@@ -157,20 +159,24 @@ npm run format
 src/
 ├── components/          # Reusable UI components
 │   ├── Layout.tsx      # Main layout with header, nav, footer
-│   ├── AccountCard.tsx # Account card with V1/V2 variants
-│   ├── TransactionList.tsx # Transaction list with filtering
-│   ├── InsightsPanel.tsx   # Insights panel with V1/V2 variants
-│   └── AlertBanner.tsx     # Alert banner component
+│   ├── PolicyCard.tsx  # Policy card component
+│   ├── ClaimList.tsx   # Claims list with status indicators
+│   └── AlertBanner.tsx # Alert banner component
 ├── pages/              # Page components
-│   ├── Dashboard.tsx   # Dashboard page
-│   ├── Transactions.tsx # Transactions page
-│   └── Insights.tsx    # Insights page
+│   ├── Policies.tsx    # Policies overview page
+│   ├── Claims.tsx      # Claims management page
+│   ├── Customers.tsx   # Customer management page
+│   ├── Payments.tsx    # Payment tracking page
+│   ├── GetQuote.tsx    # Quote generation wizard
+│   └── Login.tsx       # Login page
 ├── hooks/              # Custom React hooks
 │   └── useRoxFlag.ts   # Reactive feature flag hook
 ├── features/           # Feature-specific code
 │   └── flags.ts        # CloudBees FM integration & snapshot pattern
 ├── services/           # API and external services
 │   └── api.ts          # Axios API client
+├── contexts/           # React contexts
+│   └── AuthContext.tsx # Authentication context
 ├── styles/             # Global styles
 │   └── index.css       # Tailwind CSS imports and custom styles
 ├── test/               # Test configuration
@@ -183,20 +189,24 @@ src/
 
 ## API Integration
 
-The application connects to the following API endpoints:
+The application connects to the following insurance service API endpoints:
 
-- `GET /api/accounts/me` - Get current user information
-- `GET /api/accounts` - List all accounts
-- `GET /api/transactions` - List all transactions
-- `GET /api/insights` - Get financial insights
+- `GET /api/policies` - List all insurance policies
+- `GET /api/claims` - List all claims
+- `GET /api/customers` - List all customers
+- `GET /api/payments` - List all payments
+- `GET /api/quotes` - List all quotes
+- `POST /api/quotes` - Create a new quote
 
 ### API Proxy Configuration
 
-The Vite dev server is configured to proxy API requests:
+The Vite dev server is configured to proxy API requests to insurance microservices:
 
-- `/api/accounts` → `http://api-accounts:8001`
-- `/api/transactions` → `http://api-transactions:8002`
-- `/api/insights` → `http://api-insights:8003`
+- `/api/policies` → `http://localhost:8001` (Policies Service)
+- `/api/claims` → `http://localhost:8002` (Claims Service)
+- `/api/quotes` → `http://localhost:8003` (Pricing Service)
+- `/api/customers` → `http://localhost:8004` (Customers Service)
+- `/api/payments` → `http://localhost:8005` (Payments Service)
 
 ## CloudBees Feature Management Integration
 
@@ -216,13 +226,13 @@ import useRoxFlag from '@/hooks/useRoxFlag';
 
 function MyComponent() {
   // Component automatically re-renders when flag changes in FM dashboard
-  const dashboardCardsV2 = useRoxFlag('dashboardCardsV2');
-  const transactionsFilters = useRoxFlag('transactionsFilters');
+  const policiesCardsV2 = useRoxFlag('policiesCardsV2');
+  const claimsFiltersV2 = useRoxFlag('claimsFiltersV2');
 
   return (
     <div>
-      {dashboardCardsV2 ? <EnhancedCard /> : <BasicCard />}
-      {transactionsFilters && <Filters />}
+      {policiesCardsV2 ? <EnhancedCard /> : <BasicCard />}
+      {claimsFiltersV2 && <Filters />}
     </div>
   );
 }
@@ -232,12 +242,12 @@ function MyComponent() {
 
 ```tsx
 import {
-  isDashboardCardsV2Enabled,
-  isTransactionsFiltersEnabled
+  isPoliciesCardsV2Enabled,
+  isClaimsFiltersV2Enabled
 } from '@/features/flags';
 
 // These work but DON'T trigger re-renders on flag changes
-if (isDashboardCardsV2Enabled()) {
+if (isPoliciesCardsV2Enabled()) {
   // Use V2 implementation
 }
 ```
@@ -256,8 +266,8 @@ if (isDashboardCardsV2Enabled()) {
 1. Start the application: `npm run dev` or `docker compose up`
 2. Open browser: http://localhost:3000
 3. Open CloudBees FM dashboard
-4. Toggle `transactionsFilters` flag
-5. Watch filters appear/disappear in UI instantly
+4. Toggle `claimsFiltersV2` or `policiesCardsV2` flag
+5. Watch UI updates appear instantly without page refresh
 
 ## Styling
 

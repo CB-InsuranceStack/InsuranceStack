@@ -1,13 +1,28 @@
-# Insights API Service
+# Pricing Engine Service
 
-A production-ready Go API service for managing financial insights and alerts with CloudBees Feature Management integration.
+A FAST-PATH, production-ready Go API service for insurance pricing calculations with CloudBees Feature Management integration.
+
+## Overview
+
+The Pricing Engine service provides real-time insurance quote calculations for auto, home, and life insurance policies. Built for speed and minimal governance, this service emphasizes rapid deployment and iteration while maintaining production quality.
+
+## FAST-PATH Service
+
+This is a **FAST-PATH** service, designed for:
+- **Rapid Development**: Quick iterations without extensive approval processes
+- **Speed over Perfection**: Focus on getting features to market quickly
+- **Minimal Governance**: Streamlined reviews and faster deployment cycles
+- **Production Quality**: Fast doesn't mean sloppy - maintains high standards
+- **Feature Flag Control**: Dynamic pricing adjustments without redeployment
 
 ## Features
 
-- RESTful API for insights and alerts management
-- Real-time feature flag system using CloudBees Feature Management (Rox SDK)
-- Feature flag: `api.insightsV2` - dynamically switch between insight calculation algorithms
-- Feature flag: `api.alertsEnabled` - enable/disable alerts endpoint at runtime
+- RESTful API for insurance quote calculations
+- Support for auto, home, and life insurance policies
+- Multi-factor pricing based on coverage, age, and risk score
+- Discount calculations (multi-policy, loyalty, paperless billing)
+- Real-time feature flag system using CloudBees Feature Management
+- Feature flag: `pricing.dynamicRates` - enable/disable real-time rate adjustments based on seasonality, market conditions, and claims history
 - Proper error handling and structured logging
 - CORS support
 - Graceful shutdown
@@ -17,29 +32,29 @@ A production-ready Go API service for managing financial insights and alerts wit
 ## Project Structure
 
 ```
-api-insights/
+pricing-engine/
 ├── cmd/
 │   └── server/
 │       └── main.go              # Application entry point
 ├── internal/
 │   ├── handlers/                # HTTP handlers
 │   │   ├── health.go           # Health check handler
-│   │   ├── insights.go         # Insights endpoints
-│   │   └── alerts.go           # Alerts endpoints
+│   │   └── pricing.go          # Pricing endpoints
 │   ├── services/                # Business logic
-│   │   ├── insights_service.go # Insights business logic
-│   │   └── alerts_service.go   # Alerts business logic
+│   │   └── pricing_service.go  # Pricing calculations
 │   ├── repository/              # Data access layer
-│   │   └── repository.go       # Repository implementation
+│   │   └── repository.go       # Pricing rules loader
 │   ├── features/                # Feature flags
 │   │   └── flags.go            # CloudBees FM/Rox integration
 │   ├── models/                  # Data models
-│   │   ├── insight.go          # Insight model
-│   │   └── alert.go            # Alert model
-│   └── middleware/              # HTTP middleware
-│       ├── logging.go          # Request logging
-│       ├── cors.go             # CORS configuration
-│       └── auth.go             # Authentication
+│   │   └── pricing.go          # Quote, Rate, and pricing models
+│   ├── middleware/              # HTTP middleware
+│   │   ├── logging.go          # Request logging
+│   │   ├── cors.go             # CORS configuration
+│   │   └── auth.go             # Authentication
+│   └── auth/                    # Authentication utilities
+│       ├── jwt.go              # JWT token management
+│       └── password.go         # Password hashing
 ├── go.mod                       # Go module definition
 ├── Dockerfile                   # Docker configuration
 ├── Makefile                     # Build automation
@@ -58,122 +73,112 @@ Returns the health status of the service.
 ```json
 {
   "status": "ok",
-  "timestamp": "2024-12-13T10:30:00Z",
-  "service": "api-insights"
+  "timestamp": "2024-12-21T10:30:00Z",
+  "service": "pricing-engine"
 }
 ```
 
-### List Insights
+### Calculate Quote
 
-**GET /insights**
+**POST /quote**
 
-Returns all insights for the authenticated user. When `insightsV2=true`, titles include "(V2)" suffix.
+Calculates an insurance quote based on policy parameters.
 
-**Headers:**
-- `X-User-ID` (optional): User ID, defaults to `user-001` if not provided
-
-**Response (when insightsV2 = false):**
+**Request Body:**
 ```json
-[
-  {
-    "id": "insight-001",
-    "userId": "user-001",
-    "type": "spending_alert",
-    "category": "food_dining",
-    "title": "Higher than usual dining spending",
-    "description": "You've spent $162.25 on dining this week, which is 35% higher than your average.",
-    "severity": "medium",
-    "createdAt": "2024-12-13T08:00:00Z",
-    "actionable": true,
-    "recommendation": "Consider meal planning to reduce dining out costs."
-  }
-]
+{
+  "policyType": "auto",
+  "coverageAmount": 500000,
+  "customerAge": 35,
+  "riskScore": 2,
+  "customerId": "CUST-12345",
+  "multiPolicy": true,
+  "loyaltyYears": 5,
+  "paperlessBill": true,
+  "claimsHistory": 0
+}
 ```
-
-**Response (when insightsV2 = true):**
-```json
-[
-  {
-    "id": "insight-001",
-    "userId": "user-001",
-    "type": "spending_alert",
-    "category": "food_dining",
-    "title": "Higher than usual dining spending (V2)",
-    "description": "You've spent $162.25 on dining this week, which is 35% higher than your average.",
-    "severity": "medium",
-    "createdAt": "2024-12-13T08:00:00Z",
-    "actionable": true,
-    "recommendation": "Consider meal planning to reduce dining out costs."
-  }
-]
-```
-
-### Get Insight by ID
-
-**GET /insights/{id}**
-
-Returns a specific insight by ID. The insight must belong to the authenticated user.
-
-**Headers:**
-- `X-User-ID` (optional): User ID, defaults to `user-001` if not provided
-
-**Parameters:**
-- `id` (path): Insight ID
 
 **Response:**
 ```json
 {
-  "id": "insight-001",
-  "userId": "user-001",
-  "type": "spending_alert",
-  "category": "food_dining",
-  "title": "Higher than usual dining spending",
-  "description": "You've spent $162.25 on dining this week, which is 35% higher than your average.",
-  "severity": "medium",
-  "createdAt": "2024-12-13T08:00:00Z",
-  "actionable": true,
-  "recommendation": "Consider meal planning to reduce dining out costs."
+  "quoteId": "Q-a3b4c5d6",
+  "policyType": "auto",
+  "coverageAmount": 500000,
+  "baseRate": 1240.0,
+  "adjustedRate": 1178.0,
+  "discount": 200.88,
+  "finalPremium": 977.12,
+  "validUntil": "2025-01-20T10:30:00Z",
+  "createdAt": "2024-12-21T10:30:00Z",
+  "factors": {
+    "baseMultiplier": 800.0,
+    "coverageMultiplier": 1.55,
+    "ageMultiplier": 1.0,
+    "riskMultiplier": 1.0,
+    "dynamicMultiplier": 0.95,
+    "discountAmount": 200.88
+  }
 }
 ```
 
-**Error Responses:**
-- `404 Not Found` - Insight does not exist
-- `403 Forbidden` - Insight does not belong to the user
+**Policy Types:**
+- `auto`: Auto insurance
+- `home`: Home insurance
+- `life`: Life insurance
 
-### List Alerts
+**Risk Score:** 1-5 (1 = lowest risk, 5 = highest risk)
 
-**GET /alerts**
+**Coverage Amounts:**
+- Auto: 250000, 300000, 400000, 500000
+- Home: 500000, 650000, 750000, 1000000, 1200000
+- Life: 250000, 500000, 750000, 1000000
 
-Returns all alerts for the authenticated user. Returns `503 Service Unavailable` if `alertsEnabled=false`.
+### Get Base Rates
 
-**Headers:**
-- `X-User-ID` (optional): User ID, defaults to `user-001` if not provided
+**GET /rates**
 
-**Response (when alertsEnabled = true):**
-```json
-[
-  {
-    "id": "alert-001",
-    "userId": "user-001",
-    "type": "spending_alert",
-    "title": "Higher than usual dining spending",
-    "message": "You've spent $162.25 on dining this week, which is 35% higher than your average.",
-    "priority": "high",
-    "createdAt": "2024-12-13T08:00:00Z",
-    "read": false
-  }
-]
-```
+Returns current base rates for all policy types.
 
-**Response (when alertsEnabled = false):**
+**Response:**
 ```json
 {
-  "error": "Service Unavailable",
-  "message": "Alerts feature is currently disabled"
+  "rates": [
+    {
+      "policyType": "auto",
+      "baseRate": 800,
+      "coverage": {
+        "250000": 1.0,
+        "300000": 1.15,
+        "400000": 1.35,
+        "500000": 1.55
+      }
+    },
+    {
+      "policyType": "home",
+      "baseRate": 1200,
+      "coverage": {
+        "500000": 1.0,
+        "650000": 1.2,
+        "750000": 1.4,
+        "1000000": 1.8,
+        "1200000": 2.2
+      }
+    },
+    {
+      "policyType": "life",
+      "baseRate": 500,
+      "coverage": {
+        "250000": 1.0,
+        "500000": 1.8,
+        "750000": 2.5,
+        "1000000": 3.2
+      }
+    }
+  ],
+  "timestamp": "2024-12-21T10:30:00Z"
 }
 ```
-
-**Status Code:** `503 Service Unavailable` when feature is disabled
 
 ## Environment Variables
 
@@ -183,47 +188,61 @@ Returns all alerts for the authenticated user. Returns `503 Service Unavailable`
 | `DATA_PATH` | Path to seed data directory | `../../data/seed` |
 | `CLOUDBEES_FM_API_KEY` | CloudBees Feature Management API key | `dev-mode` |
 | `LOG_LEVEL` | Logging level (debug, info, warn, error) | `info` |
-| `FEATURE_INSIGHTS_V2` | Enable V2 algorithm in dev mode (true/false) | `false` |
-| `FEATURE_ALERTS_ENABLED` | Enable alerts in dev mode (true/false) | `true` |
+| `JWT_SECRET` | JWT signing secret | `dev-secret-key-change-in-production` |
+| `FEATURE_DYNAMIC_RATES` | Enable dynamic rates in dev mode (true/false) | `false` |
 
 ## Feature Flags
 
-### api.insightsV2
+### pricing.dynamicRates
 
 **Default:** `false`
 
-When enabled, the V2 insights calculation algorithm is used. In this demo implementation, V2 insights have "(V2)" appended to their titles to demonstrate the feature flag is active.
+When enabled, dynamic pricing adjustments are applied based on:
+- **Seasonality**: Q1 (0.95x), Q2 (1.0x), Q3 (1.05x), Q4 (1.02x)
+- **Market Conditions**: Global multiplier for market volatility
+- **Claims History**: Adjustments based on customer claims (0 claims: 0.9x, 1: 1.0x, 2: 1.15x, 3+: 1.3x)
 
 **Use Cases:**
-- A/B testing different insight algorithms
-- Rolling out new calculation logic gradually
-- Instant rollback if issues are detected
-
-### api.alertsEnabled
-
-**Default:** `true`
-
-Controls whether the alerts endpoint is available. When disabled, `GET /alerts` returns `503 Service Unavailable`.
-
-**Use Cases:**
-- Disable alerts during system maintenance
-- Control feature access by customer tier
-- Emergency feature kill switch
+- A/B testing dynamic pricing strategies
+- Seasonal rate adjustments
+- Market-responsive pricing
+- Instant rollback if pricing issues detected
 
 ### CloudBees Integration
 
 The service uses the CloudBees Rox SDK (`github.com/rollout/rox-go/v5/core`) for real-time feature flag management. Flags can be toggled instantly without redeploying the service.
 
-**Development Mode:** When no CloudBees API key is provided, the service falls back to environment variables (`FEATURE_INSIGHTS_V2` and `FEATURE_ALERTS_ENABLED`).
+**Development Mode:** When no CloudBees API key is provided, the service falls back to environment variables (`FEATURE_DYNAMIC_RATES`).
 
 **Production Mode:** Provide `CLOUDBEES_FM_API_KEY` to use CloudBees Feature Management for centralized control and real-time updates.
+
+## Pricing Calculation
+
+The pricing engine calculates quotes using the following formula:
+
+```
+Base Premium = Base Rate × Coverage Multiplier × Age Multiplier × Risk Multiplier
+
+Dynamic Adjustment = Base Premium × Dynamic Multiplier (if enabled)
+
+Total Discounts = (Multi-Policy + Loyalty + Low Risk + Paperless) discounts
+
+Final Premium = Dynamic Adjusted Premium - Total Discounts
+```
+
+### Discounts
+
+- **Multi-Policy**: 15% discount for customers with multiple policies
+- **Loyalty Years**: 0% (1yr), 5% (2yr), 8% (3yr), 12% (5yr), 18% (10yr+)
+- **Low Risk**: 10% for risk score of 1
+- **Paperless Billing**: 3% for opting into paperless billing
 
 ## Getting Started
 
 ### Prerequisites
 
 - Go 1.21 or higher
-- Access to seed data files at `/data/seed/insights.json`
+- Access to seed data files at `/data/seed/pricing-rules.json`
 - CloudBees Feature Management account (optional, for production)
 
 ### Installation
@@ -231,7 +250,7 @@ The service uses the CloudBees Rox SDK (`github.com/rollout/rox-go/v5/core`) for
 1. Install dependencies:
 
 ```bash
-cd /Users/brown/git_orgs/CB-AccountStack/AccountStack/apps/api-insights
+cd /Users/brown/git_orgs/CB-InsuranceStack/InsuranceStack/apps/pricing-engine
 go mod download
 ```
 
@@ -239,7 +258,7 @@ go mod download
 
 ```bash
 export PORT=8003
-export DATA_PATH=/Users/brown/git_orgs/CB-AccountStack/AccountStack/data/seed
+export DATA_PATH=/Users/brown/git_orgs/CB-InsuranceStack/InsuranceStack/data/seed
 export CLOUDBEES_FM_API_KEY=your-api-key-here
 export LOG_LEVEL=info
 ```
@@ -253,8 +272,8 @@ go run cmd/server/main.go
 Or build and run:
 
 ```bash
-go build -o bin/insights-api cmd/server/main.go
-./bin/insights-api
+go build -o bin/pricing-engine cmd/server/main.go
+./bin/pricing-engine
 ```
 
 ### Using Make
@@ -289,57 +308,78 @@ make help
 curl http://localhost:8003/healthz
 ```
 
-### Get All Insights (default algorithm)
+### Get Base Rates
 ```bash
-curl http://localhost:8003/insights
+curl http://localhost:8003/rates
 ```
 
-### Get All Insights (V2 algorithm)
+### Calculate Auto Insurance Quote
 ```bash
-# Start server with V2 enabled
-export FEATURE_INSIGHTS_V2=true
-go run cmd/server/main.go
-
-# In another terminal
-curl http://localhost:8003/insights
-# Titles will have "(V2)" suffix
+curl -X POST http://localhost:8003/quote \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policyType": "auto",
+    "coverageAmount": 500000,
+    "customerAge": 35,
+    "riskScore": 2,
+    "multiPolicy": true,
+    "loyaltyYears": 5,
+    "paperlessBill": true,
+    "claimsHistory": 0
+  }'
 ```
 
-### Get Specific Insight
+### Calculate Home Insurance Quote
 ```bash
-curl http://localhost:8003/insights/insight-001
+curl -X POST http://localhost:8003/quote \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policyType": "home",
+    "coverageAmount": 750000,
+    "customerAge": 42,
+    "riskScore": 1,
+    "multiPolicy": false,
+    "loyaltyYears": 3,
+    "paperlessBill": true,
+    "claimsHistory": 1
+  }'
 ```
 
-### Get All Alerts
+### Test Dynamic Rates (Enabled)
 ```bash
-curl http://localhost:8003/alerts
-```
+# Start server with dynamic rates enabled
+export FEATURE_DYNAMIC_RATES=true
+go run cmd/server/main.go &
 
-### Test Alerts Disabled
-```bash
-# Start server with alerts disabled
-export FEATURE_ALERTS_ENABLED=false
-go run cmd/server/main.go
-
-# In another terminal
-curl http://localhost:8003/alerts
-# Returns 503 Service Unavailable
-```
-
-### Test with Different User
-```bash
-curl -H "X-User-ID: user-002" http://localhost:8003/insights
+# Calculate quote - rates will be adjusted by seasonality and claims history
+curl -X POST http://localhost:8003/quote \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policyType": "life",
+    "coverageAmount": 1000000,
+    "customerAge": 45,
+    "riskScore": 3,
+    "claimsHistory": 2
+  }'
 ```
 
 ## Development
+
+### FAST-PATH Development Principles
+
+1. **Speed First**: Prioritize rapid development and deployment
+2. **Iterate Quickly**: Ship features fast, improve based on feedback
+3. **Feature Flags**: Use flags for gradual rollouts and quick rollbacks
+4. **Minimal Process**: Streamlined reviews, trust the team
+5. **Production Quality**: Fast doesn't mean broken - maintain standards
 
 ### Project Layout
 
 The service follows Go best practices with a clean architecture:
 
 1. **Handlers Layer** (`internal/handlers/`): HTTP request/response handling
-2. **Services Layer** (`internal/services/`): Business logic and feature flag application
-3. **Repository Layer** (`internal/repository/`): Data access abstraction
+2. **Services Layer** (`internal/services/`): Business logic and pricing calculations
+3. **Repository Layer** (`internal/repository/`): Data access and rule loading
 4. **Models Layer** (`internal/models/`): Domain models and data structures
 5. **Features Layer** (`internal/features/`): Feature flag management
 
@@ -347,21 +387,16 @@ The service follows Go best practices with a clean architecture:
 
 - **Logging**: Logs all HTTP requests with method, path, status, and duration
 - **CORS**: Handles cross-origin resource sharing
-- **Auth**: Extracts and validates user authentication (X-User-ID header)
+- **Auth**: JWT token validation (bypassed for health check)
 
 ### Feature Flag Architecture
 
 Feature flags are initialized on startup and can be updated in real-time via CloudBees. The service checks flag status on each request, allowing instant behavior changes without downtime.
 
 ```go
-// Check if V2 algorithm should be used
-if flags.IsInsightsV2Enabled() {
-    insights = applyV2Algorithm(insights)
-}
-
-// Check if alerts are enabled
-if !flags.IsAlertsEnabled() {
-    return 503 // Service Unavailable
+// Check if dynamic rates should be applied
+if flags.IsDynamicRatesEnabled() {
+    dynamicMultiplier = calculateDynamicMultiplier(req)
 }
 ```
 
@@ -369,7 +404,7 @@ if !flags.IsAlertsEnabled() {
 
 ### Build Image
 ```bash
-docker build -t accountstack/api-insights:latest .
+docker build -t insurancestack/pricing-engine:latest .
 ```
 
 ### Run Container
@@ -380,16 +415,16 @@ docker run -p 8003:8003 \
   -e CLOUDBEES_FM_API_KEY=your-key \
   -v /path/to/data/seed:/data/seed \
   -e DATA_PATH=/data/seed \
-  accountstack/api-insights:latest
+  insurancestack/pricing-engine:latest
 ```
 
 ## Production Considerations
 
-1. **Authentication**: The current implementation uses a simple `X-User-ID` header for demo purposes. In production, implement proper JWT token validation or OAuth2.
+1. **Authentication**: Implement proper JWT token validation or OAuth2.
 
 2. **CORS**: The CORS middleware currently allows all origins (`*`). In production, specify exact allowed origins.
 
-3. **Database**: Data is loaded from JSON files. In production, integrate with a proper database (PostgreSQL, MySQL, etc.).
+3. **Database**: Pricing rules are loaded from JSON files. In production, consider storing rules in a database for easier updates.
 
 4. **Monitoring**: Add metrics collection (Prometheus), distributed tracing (OpenTelemetry), and error tracking (Sentry).
 
@@ -401,30 +436,32 @@ docker run -p 8003:8003 \
 
 8. **Feature Flag Management**: Use CloudBees Feature Management dashboard to control flags across environments.
 
+9. **Caching**: Consider caching pricing rules for improved performance.
+
 ## Data Model
 
-### Insight
-- `id`: Unique identifier
-- `userId`: Owner user ID
-- `type`: Insight type (spending_alert, savings_opportunity, etc.)
-- `category`: Category (food_dining, utilities, etc.)
-- `title`: Insight title
-- `description`: Detailed description
-- `severity`: Severity level (info, low, medium, high)
-- `createdAt`: Creation timestamp
-- `actionable`: Whether user can take action
-- `recommendation`: Optional recommendation text
+### QuoteRequest
+- `policyType`: Policy type (auto, home, life)
+- `coverageAmount`: Coverage amount in dollars
+- `customerAge`: Customer age (18-120)
+- `riskScore`: Risk score (1-5)
+- `customerId`: Customer identifier (optional)
+- `multiPolicy`: Multi-policy discount flag
+- `loyaltyYears`: Years of customer loyalty
+- `paperlessBill`: Paperless billing flag
+- `claimsHistory`: Number of previous claims
 
-### Alert
-- `id`: Unique identifier
-- `userId`: Owner user ID
-- `type`: Alert type
-- `title`: Alert title
-- `message`: Alert message
-- `priority`: Priority level (medium, high, critical)
-- `createdAt`: Creation timestamp
-- `read`: Read status
-- `actionUrl`: Optional action URL
+### Quote
+- `quoteId`: Unique quote identifier
+- `policyType`: Policy type
+- `coverageAmount`: Coverage amount
+- `baseRate`: Base calculated rate
+- `adjustedRate`: Rate after dynamic adjustments
+- `discount`: Total discount amount
+- `finalPremium`: Final premium after discounts
+- `validUntil`: Quote expiration date
+- `createdAt`: Quote creation timestamp
+- `factors`: Breakdown of pricing factors
 
 ## Testing
 
@@ -441,14 +478,14 @@ go test -v -race ./...
 
 ## License
 
-Copyright 2024 CB-AccountStack
+Copyright 2024 CB-InsuranceStack
 
 ## Quick Start
 
 The fastest way to get started:
 
 ```bash
-# From the api-insights directory
+# From the pricing-engine directory
 export DATA_PATH=../../data/seed
 go run cmd/server/main.go
 ```
@@ -459,23 +496,21 @@ Then test the API:
 # Health check
 curl http://localhost:8003/healthz
 
-# Get insights (default algorithm)
-curl http://localhost:8003/insights
+# Get base rates
+curl http://localhost:8003/rates
 
-# Get insights (V2 algorithm)
-export FEATURE_INSIGHTS_V2=true
-go run cmd/server/main.go &
-curl http://localhost:8003/insights
-# Titles will have "(V2)" suffix
-
-# Get alerts
-curl http://localhost:8003/alerts
-
-# Test alerts disabled
-export FEATURE_ALERTS_ENABLED=false
-go run cmd/server/main.go &
-curl http://localhost:8003/alerts
-# Returns 503 Service Unavailable
+# Calculate a quote
+curl -X POST http://localhost:8003/quote \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policyType": "auto",
+    "coverageAmount": 500000,
+    "customerAge": 35,
+    "riskScore": 2,
+    "multiPolicy": true,
+    "loyaltyYears": 5,
+    "paperlessBill": true
+  }'
 ```
 
 ## CloudBees Feature Management Setup
@@ -488,7 +523,15 @@ curl http://localhost:8003/alerts
    export CLOUDBEES_FM_API_KEY=your-actual-api-key
    ```
 5. Run the service - it will automatically register flags with CloudBees
-6. Toggle flags in the CloudBees dashboard - changes apply instantly!
+6. Toggle `pricing.dynamicRates` in the CloudBees dashboard - changes apply instantly!
+
+## FAST-PATH Success Metrics
+
+- **Time to Market**: Days, not weeks or months
+- **Deployment Frequency**: Multiple times per week
+- **Feature Flag Usage**: Active feature flagging for safe, fast deployments
+- **Customer Feedback Loop**: Rapid iteration based on real-world usage
+- **Team Velocity**: High throughput with maintained quality
 
 ## Support
 

@@ -4,9 +4,11 @@ import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Insights from './pages/Insights';
+import Policies from './pages/Policies';
+import Claims from './pages/Claims';
+import Customers from './pages/Customers';
+import Payments from './pages/Payments';
+import GetQuote from './pages/GetQuote';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -38,9 +40,11 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/insights" element={<Insights />} />
+                      <Route path="/" element={<Policies />} />
+                      <Route path="/claims" element={<Claims />} />
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/payments" element={<Payments />} />
+                      <Route path="/quote" element={<GetQuote />} />
                       {/* 404 Route */}
                       <Route
                         path="*"
@@ -50,7 +54,7 @@ function App() {
                               <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
                               <p className="text-gray-600 mb-6">Page not found</p>
                               <a href="/" className="btn-primary">
-                                Go to Dashboard
+                                Go to Policies
                               </a>
                             </div>
                           </div>
