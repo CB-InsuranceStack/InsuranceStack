@@ -26,10 +26,8 @@ export default function ClaimList({ claims }: ClaimListProps) {
         return <Clock className="w-5 h-5 text-yellow-600" />;
       case 'approved':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'denied':
+      case 'rejected':
         return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'paid':
-        return <DollarSign className="w-5 h-5 text-green-600" />;
       default:
         return <AlertCircle className="w-5 h-5 text-gray-600" />;
     }
@@ -43,10 +41,8 @@ export default function ClaimList({ claims }: ClaimListProps) {
         return 'badge-warning';
       case 'approved':
         return 'badge-success';
-      case 'denied':
+      case 'rejected':
         return 'badge-error';
-      case 'paid':
-        return 'badge-success';
       default:
         return 'badge-default';
     }
@@ -77,10 +73,10 @@ export default function ClaimList({ claims }: ClaimListProps) {
               Status
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date of Loss
+              Submitted
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Submitted
+              Reviewed
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
@@ -104,7 +100,7 @@ export default function ClaimList({ claims }: ClaimListProps) {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900 capitalize">{claim.claimType}</div>
+                <div className="text-sm text-gray-900 capitalize">{claim.type}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-semibold text-gray-900">
@@ -117,10 +113,12 @@ export default function ClaimList({ claims }: ClaimListProps) {
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{formatDate(claim.dateOfLoss)}</div>
+                <div className="text-sm text-gray-900">{formatDate(claim.submittedDate)}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{formatDate(claim.submittedDate)}</div>
+                <div className="text-sm text-gray-900">
+                  {claim.reviewedDate ? formatDate(claim.reviewedDate) : '-'}
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button className="text-brand-600 hover:text-brand-900 transition-colors">
