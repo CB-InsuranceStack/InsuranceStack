@@ -1,4 +1,4 @@
-import { useQuery } from '@tantml:react-query';
+import { useQuery } from '@tanstack/react-query';
 import { CreditCard, CheckCircle, Clock, XCircle, DollarSign, TrendingUp, Filter } from 'lucide-react';
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
