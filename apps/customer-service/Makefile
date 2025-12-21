@@ -1,8 +1,8 @@
 .PHONY: all build run test clean fmt lint docker-build docker-run help
 
 # Variables
-BINARY_NAME=accounts-api
-DOCKER_IMAGE=accountstack/api-accounts
+BINARY_NAME=customer-service
+DOCKER_IMAGE=insurancestack/customer-service
 DOCKER_TAG=latest
 GO=go
 GOFLAGS=-v
@@ -66,8 +66,8 @@ docker-build:
 ## docker-run: Run Docker container
 docker-run:
 	@echo "Running Docker container..."
-	@docker run -p 8001:8001 \
-		-e PORT=8001 \
+	@docker run -p 8004:8004 \
+		-e PORT=8004 \
 		-e LOG_LEVEL=info \
 		-e CLOUDBEES_FM_API_KEY=$(CLOUDBEES_FM_API_KEY) \
 		-v $(PWD)/../../data/seed:/data/seed \

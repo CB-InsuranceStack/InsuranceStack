@@ -17,7 +17,7 @@ func NewHealthHandler() *HealthHandler {
 func (h *HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"status":  "healthy",
-		"service": "api-transactions",
+		"service": "claims-service",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

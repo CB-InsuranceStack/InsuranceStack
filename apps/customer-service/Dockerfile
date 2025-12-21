@@ -8,16 +8,16 @@ RUN apk add --no-cache git
 WORKDIR /build
 
 # Copy go mod files
-COPY apps/api-accounts/go.mod apps/api-accounts/go.sum ./
+COPY apps/customer-service/go.mod apps/customer-service/go.sum ./
 
 # Download dependencies
 RUN go mod download
 
 # Copy source code
-COPY apps/api-accounts/ ./
+COPY apps/customer-service/ ./
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o accounts-api cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o customer-service cmd/server/main.go
 
 # Final stage
 FROM alpine:latest
@@ -32,7 +32,7 @@ RUN addgroup -g 1000 appuser && \
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /build/accounts-api .
+COPY --from=builder /build/customer-service .
 
 # Copy seed data from the build context
 COPY data/seed ./data
@@ -45,14 +45,14 @@ USER appuser
 
 # Set environment variables
 ENV DATA_PATH=/app/data \
-    PORT=3000
+    PORT=8004
 
 # Expose port
-EXPOSE 8001
+EXPOSE 8004
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8001/healthz || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8004/healthz || exit 1
 
 # Run the application
-CMD ["./accounts-api"]
+CMD ["./customer-service"]

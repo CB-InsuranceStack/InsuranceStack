@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CB-AccountStack/AccountStack/apps/api-insights/internal/features"
-	"github.com/CB-AccountStack/AccountStack/apps/api-insights/internal/handlers"
-	"github.com/CB-AccountStack/AccountStack/apps/api-insights/internal/middleware"
-	"github.com/CB-AccountStack/AccountStack/apps/api-insights/internal/repository"
-	"github.com/CB-AccountStack/AccountStack/apps/api-insights/internal/services"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/pricing-engine/internal/features"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/pricing-engine/internal/handlers"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/pricing-engine/internal/middleware"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/pricing-engine/internal/repository"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/pricing-engine/internal/services"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -36,7 +36,7 @@ func main() {
 	}
 	logger.SetLevel(level)
 
-	logger.Info("Starting Insights API service...")
+	logger.Info("Starting Pricing Engine service...")
 
 	// Get configuration from environment
 	port := os.Getenv("PORT")
@@ -66,8 +66,7 @@ func main() {
 
 	// Log feature flag status
 	logger.WithFields(logrus.Fields{
-		"insightsV2":    flags.IsInsightsV2Enabled(),
-		"alertsEnabled": flags.IsAlertsEnabled(),
+		"dynamicRates": flags.IsDynamicRatesEnabled(),
 	}).Info("Feature flags initialized")
 
 	// Initialize repository
@@ -77,13 +76,11 @@ func main() {
 	}
 
 	// Initialize services
-	insightsService := services.NewInsightsService(repo, flags, logger)
-	alertsService := services.NewAlertsService(repo, flags, logger)
+	pricingService := services.NewPricingService(repo, flags, logger)
 
 	// Initialize handlers
-	healthHandler := handlers.NewHealthHandler()
-	insightsHandler := handlers.NewInsightsHandler(insightsService, logger)
-	alertsHandler := handlers.NewAlertsHandler(alertsService, logger)
+	healthHandler := handlers.NewHealthHandler("pricing-engine")
+	pricingHandler := handlers.NewPricingHandler(pricingService, logger)
 
 	// Setup router
 	router := mux.NewRouter()
@@ -97,9 +94,8 @@ func main() {
 
 	// Register routes
 	router.Handle("/healthz", healthHandler).Methods("GET")
-	router.HandleFunc("/insights", insightsHandler.GetInsights).Methods("GET")
-	router.HandleFunc("/insights/{id}", insightsHandler.GetInsightByID).Methods("GET")
-	router.HandleFunc("/alerts", alertsHandler.GetAlerts).Methods("GET")
+	router.HandleFunc("/quote", pricingHandler.GetQuote).Methods("POST")
+	router.HandleFunc("/rates", pricingHandler.GetRates).Methods("GET")
 
 	// Wrap router with CORS
 	handler := corsHandler.Handler(router)
@@ -117,14 +113,12 @@ func main() {
 	go func() {
 		logger.Infof("Server listening on port %s", port)
 		logger.Info("API Endpoints:")
-		logger.Info("  GET /healthz - Health check")
-		logger.Info("  GET /insights - List user insights")
-		logger.Info("  GET /insights/{id} - Get insight by ID")
-		logger.Info("  GET /alerts - List user alerts")
+		logger.Info("  GET  /healthz - Health check")
+		logger.Info("  POST /quote - Calculate insurance quote")
+		logger.Info("  GET  /rates - Get current base rates")
 		logger.Info("")
 		logger.Info("Feature Flags:")
-		logger.Infof("  api.insightsV2: %v (adds V2 suffix to titles)", flags.IsInsightsV2Enabled())
-		logger.Infof("  api.alertsEnabled: %v (enables/disables alerts endpoint)", flags.IsAlertsEnabled())
+		logger.Infof("  pricing.dynamicRates: %v (enables real-time rate adjustments)", flags.IsDynamicRatesEnabled())
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.WithError(err).Fatal("Server failed to start")

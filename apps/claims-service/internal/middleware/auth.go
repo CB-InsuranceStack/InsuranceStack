@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CB-AccountStack/AccountStack/apps/api-transactions/internal/auth"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/claims-service/internal/auth"
 	"github.com/sirupsen/logrus"
 )
 

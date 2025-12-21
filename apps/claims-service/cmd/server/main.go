@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CB-AccountStack/AccountStack/apps/api-transactions/internal/features"
-	"github.com/CB-AccountStack/AccountStack/apps/api-transactions/internal/handlers"
-	"github.com/CB-AccountStack/AccountStack/apps/api-transactions/internal/middleware"
-	"github.com/CB-AccountStack/AccountStack/apps/api-transactions/internal/repository"
-	"github.com/CB-AccountStack/AccountStack/apps/api-transactions/internal/services"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/claims-service/internal/features"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/claims-service/internal/handlers"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/claims-service/internal/middleware"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/claims-service/internal/repository"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/claims-service/internal/services"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -36,7 +36,7 @@ func main() {
 	}
 	logger.SetLevel(level)
 
-	logger.Info("Starting Transactions API service...")
+	logger.Info("Starting Claims Service...")
 
 	// Get configuration from environment
 	port := os.Getenv("PORT")
@@ -71,11 +71,11 @@ func main() {
 	}
 
 	// Initialize services
-	transactionService := services.NewTransactionService(repo, flags, logger)
+	claimService := services.NewClaimService(repo, flags, logger)
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler()
-	transactionHandler := handlers.NewTransactionHandler(transactionService, logger)
+	claimHandler := handlers.NewClaimHandler(claimService, logger)
 
 	// Setup router
 	router := mux.NewRouter()
@@ -89,8 +89,11 @@ func main() {
 
 	// Register routes
 	router.Handle("/healthz", healthHandler).Methods("GET")
-	router.HandleFunc("/transactions", transactionHandler.GetTransactions).Methods("GET")
-	router.HandleFunc("/transactions/{id}", transactionHandler.GetTransactionByID).Methods("GET")
+	router.HandleFunc("/claims", claimHandler.GetClaims).Methods("GET")
+	router.HandleFunc("/claims/{id}", claimHandler.GetClaimByID).Methods("GET")
+	router.HandleFunc("/claims", claimHandler.CreateClaim).Methods("POST")
+	router.HandleFunc("/claims/{id}", claimHandler.UpdateClaim).Methods("PUT")
+	router.HandleFunc("/claims/{id}/status", claimHandler.UpdateClaimStatus).Methods("PUT")
 
 	// Wrap router with CORS
 	handler := corsHandler.Handler(router)
@@ -109,10 +112,13 @@ func main() {
 		logger.Infof("Server listening on port %s", port)
 		logger.Info("API Endpoints:")
 		logger.Info("  GET /healthz - Health check")
-		logger.Info("  GET /transactions - List transactions with optional filters")
-		logger.Info("    Query params: accountId, startDate, endDate, category, minAmount, maxAmount")
-		logger.Info("    Note: Advanced filters require api.advancedFilters feature flag")
-		logger.Info("  GET /transactions/{id} - Get transaction by ID")
+		logger.Info("  GET /claims - List claims with optional filters")
+		logger.Info("    Query params: policyId, customerId, status, type")
+		logger.Info("  GET /claims/{id} - Get claim by ID")
+		logger.Info("  POST /claims - Submit new claim")
+		logger.Info("  PUT /claims/{id} - Update claim")
+		logger.Info("  PUT /claims/{id}/status - Change claim status (approval workflow)")
+		logger.Info("    Note: Auto-approval enabled by claims.autoApproval feature flag")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.WithError(err).Fatal("Server failed to start")

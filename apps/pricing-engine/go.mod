@@ -1,4 +1,4 @@
-module github.com/CB-AccountStack/AccountStack/apps/api-insights
+module github.com/CB-InsuranceStack/InsuranceStack/apps/pricing-engine
 
 go 1.21
 

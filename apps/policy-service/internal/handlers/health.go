@@ -21,12 +21,18 @@ type HealthResponse struct {
 	Service   string    `json:"service"`
 }
 
+// ErrorResponse represents an error response
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
 // ServeHTTP handles GET /healthz
 func (h *HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	response := HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now(),
-		Service:   "api-accounts",
+		Service:   "policy-service",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

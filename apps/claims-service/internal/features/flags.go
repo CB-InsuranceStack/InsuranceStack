@@ -26,17 +26,17 @@ func Initialize(apiKey string, logger *logrus.Logger) (*Flags, error) {
 	}
 
 	// Load feature flags from environment variables
-	// api.advancedFilters (default: false) - enable complex filtering
-	advancedFiltersStr := os.Getenv("FEATURE_ADVANCED_FILTERS")
-	if advancedFiltersStr != "" {
-		advancedFilters, err := strconv.ParseBool(advancedFiltersStr)
+	// claims.autoApproval (default: false) - enable automatic approval of low-value claims
+	autoApprovalStr := os.Getenv("FEATURE_AUTO_APPROVAL")
+	if autoApprovalStr != "" {
+		autoApproval, err := strconv.ParseBool(autoApprovalStr)
 		if err == nil {
-			flags.advancedFilters = advancedFilters
+			flags.autoApproval = autoApproval
 		}
 	}
 
 	logger.WithFields(logrus.Fields{
-		"advancedFilters": flags.advancedFilters,
+		"autoApproval": flags.autoApproval,
 	}).Info("Feature flags initialized")
 
 	if apiKey != "" && apiKey != "dev-mode" {
@@ -51,25 +51,25 @@ func GetFlags() *Flags {
 	return flags
 }
 
-// IsAdvancedFiltersEnabled returns whether advanced filters are enabled
-func (f *Flags) IsAdvancedFiltersEnabled() bool {
+// IsAutoApprovalEnabled returns whether automatic approval for low-value claims is enabled
+func (f *Flags) IsAutoApprovalEnabled() bool {
 	if f == nil {
 		return false
 	}
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.advancedFilters
+	return f.autoApproval
 }
 
-// SetAdvancedFilters sets the advanced filters flag (for testing/admin purposes)
-func (f *Flags) SetAdvancedFilters(enabled bool) {
+// SetAutoApproval sets the auto approval flag (for testing/admin purposes)
+func (f *Flags) SetAutoApproval(enabled bool) {
 	if f == nil {
 		return
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.advancedFilters = enabled
-	f.logger.WithField("advancedFilters", enabled).Info("Feature flag updated")
+	f.autoApproval = enabled
+	f.logger.WithField("autoApproval", enabled).Info("Feature flag updated")
 }
 
 // Shutdown gracefully shuts down the feature management system
@@ -95,8 +95,8 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
 
 3. Replace the Flags struct:
    type Flags struct {
-       AdvancedFilters model.RoxFlag
-       logger          *logrus.Logger
+       AutoApproval model.RoxFlag
+       logger       *logrus.Logger
    }
 
 4. Update Initialize function:
@@ -105,11 +105,11 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
            logger: logger,
        }
 
-       // Register feature flag: api.advancedFilters (default: false)
-       flags.AdvancedFilters = model.NewRoxFlag(false)
+       // Register feature flag: claims.autoApproval (default: false)
+       flags.AutoApproval = model.NewRoxFlag(false)
 
        // Register with CloudBees
-       roxx.Register("api", flags)
+       roxx.Register("claims", flags)
 
        // Setup Rox with API key
        options := roxx.NewRoxOptions(roxx.RoxOptionsBuilder{})
@@ -126,12 +126,12 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
        return flags, nil
    }
 
-5. Update IsAdvancedFiltersEnabled:
-   func (f *Flags) IsAdvancedFiltersEnabled() bool {
-       if f == nil || f.AdvancedFilters == nil {
+5. Update IsAutoApprovalEnabled:
+   func (f *Flags) IsAutoApprovalEnabled() bool {
+       if f == nil || f.AutoApproval == nil {
            return false
        }
-       return f.AdvancedFilters.IsEnabled(nil)
+       return f.AutoApproval.IsEnabled(nil)
    }
 
 6. Update Shutdown:

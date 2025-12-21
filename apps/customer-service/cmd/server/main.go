@@ -111,11 +111,12 @@ func main() {
 	go func() {
 		logger.Infof("Server listening on port %s", port)
 		logger.Info("API Endpoints:")
-		logger.Info("  GET  /healthz - Health check")
-		logger.Info("  POST /login - User login")
-		logger.Info("  GET  /me - Current user info")
-		logger.Info("  GET  /accounts - List user accounts")
-		logger.Info("  GET  /accounts/{id} - Get account by ID")
+		logger.Info("  GET    /healthz - Health check")
+		logger.Info("  GET    /customers - List all customers")
+		logger.Info("  GET    /customers/{id} - Get customer by ID")
+		logger.Info("  POST   /customers - Create new customer")
+		logger.Info("  PUT    /customers/{id} - Update customer")
+		logger.Info("  DELETE /customers/{id} - Deactivate customer")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.WithError(err).Fatal("Server failed to start")

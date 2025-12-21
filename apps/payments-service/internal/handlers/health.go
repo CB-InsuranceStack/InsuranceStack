@@ -7,11 +7,15 @@ import (
 )
 
 // HealthHandler handles health check requests
-type HealthHandler struct{}
+type HealthHandler struct{
+	serviceName string
+}
 
 // NewHealthHandler creates a new health handler
-func NewHealthHandler() *HealthHandler {
-	return &HealthHandler{}
+func NewHealthHandler(serviceName string) *HealthHandler {
+	return &HealthHandler{
+		serviceName: serviceName,
+	}
 }
 
 // HealthResponse represents the health check response
@@ -26,7 +30,7 @@ func (h *HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	response := HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now(),
-		Service:   "api-accounts",
+		Service:   h.serviceName,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

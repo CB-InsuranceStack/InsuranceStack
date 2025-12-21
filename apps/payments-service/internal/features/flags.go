@@ -10,10 +10,9 @@ import (
 
 // Flags holds all feature flags for the application
 type Flags struct {
-	maskAmounts bool
-	currency    string
-	mu          sync.RWMutex
-	logger      *logrus.Logger
+	instantPayouts bool
+	mu             sync.RWMutex
+	logger         *logrus.Logger
 }
 
 var flags *Flags
@@ -29,25 +28,17 @@ func Initialize(apiKey string, logger *logrus.Logger) (*Flags, error) {
 	}
 
 	// Load feature flags from environment variables
-	// api.maskAmounts (default: false) - mask dollar amounts in responses
-	maskAmountsStr := os.Getenv("FEATURE_MASK_AMOUNTS")
-	if maskAmountsStr != "" {
-		maskAmounts, err := strconv.ParseBool(maskAmountsStr)
+	// payments.instantPayouts (default: false) - enable instant payout processing
+	instantPayoutsStr := os.Getenv("FEATURE_INSTANT_PAYOUTS")
+	if instantPayoutsStr != "" {
+		instantPayouts, err := strconv.ParseBool(instantPayoutsStr)
 		if err == nil {
-			flags.maskAmounts = maskAmounts
+			flags.instantPayouts = instantPayouts
 		}
 	}
 
-	// api.currency (default: "USD") - currency code for amounts
-	currency := os.Getenv("FEATURE_CURRENCY")
-	if currency == "" {
-		currency = "USD" // Default to USD
-	}
-	flags.currency = currency
-
 	logger.WithFields(logrus.Fields{
-		"maskAmounts": flags.maskAmounts,
-		"currency":    flags.currency,
+		"instantPayouts": flags.instantPayouts,
 	}).Info("Feature flags initialized")
 
 	if apiKey != "" && apiKey != "dev-mode" {
@@ -62,110 +53,25 @@ func GetFlags() *Flags {
 	return flags
 }
 
-// ShouldMaskAmounts returns whether amounts should be masked in responses
-func (f *Flags) ShouldMaskAmounts() bool {
+// IsInstantPayoutsEnabled returns whether instant payouts are enabled
+func (f *Flags) IsInstantPayoutsEnabled() bool {
 	if f == nil {
 		return false
 	}
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.maskAmounts
+	return f.instantPayouts
 }
 
-// SetMaskAmounts sets the mask amounts flag (for testing/admin purposes)
-func (f *Flags) SetMaskAmounts(enabled bool) {
+// SetInstantPayouts sets the instant payouts flag (for testing/admin purposes)
+func (f *Flags) SetInstantPayouts(enabled bool) {
 	if f == nil {
 		return
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.maskAmounts = enabled
-	f.logger.WithField("maskAmounts", enabled).Info("Feature flag updated")
-}
-
-// GetCurrency returns the currency code for amounts
-func (f *Flags) GetCurrency() string {
-	if f == nil {
-		return "USD"
-	}
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.currency
-}
-
-// GetCurrencyForUser returns the currency code based on user context (country)
-// This demonstrates CloudBees Feature Management targeting by user properties
-func (f *Flags) GetCurrencyForUser(userCountry string) string {
-	if f == nil {
-		return "USD"
-	}
-
-	// If FEATURE_CURRENCY is set globally, use that (environment override)
-	f.mu.RLock()
-	globalCurrency := f.currency
-	f.mu.RUnlock()
-
-	// If environment variable explicitly set (not default), use it
-	if os.Getenv("FEATURE_CURRENCY") != "" {
-		return globalCurrency
-	}
-
-	// Otherwise, use country-based targeting (simulates CloudBees targeting rules)
-	currency := countryToCurrency(userCountry)
-
-	f.logger.WithFields(logrus.Fields{
-		"userCountry": userCountry,
-		"currency":    currency,
-	}).Debug("Currency determined by user country")
-
-	return currency
-}
-
-// countryToCurrency maps country codes to currency codes
-// This simulates CloudBees Feature Management targeting rules:
-//   IF user.country == "US" THEN currency = "USD"
-//   IF user.country == "UK" THEN currency = "GBP"
-//   IF user.country == "FR" THEN currency = "EUR"
-func countryToCurrency(country string) string {
-	countryMap := map[string]string{
-		"US": "USD",
-		"UK": "GBP",
-		"GB": "GBP", // Alternative code for United Kingdom
-		"FR": "EUR",
-		"DE": "EUR",
-		"ES": "EUR",
-		"IT": "EUR",
-		"NL": "EUR",
-		"BE": "EUR",
-		"AT": "EUR",
-		"PT": "EUR",
-		"IE": "EUR",
-		"CA": "CAD",
-		"AU": "AUD",
-		"JP": "JPY",
-		"CN": "CNY",
-		"IN": "INR",
-		"BR": "BRL",
-		"MX": "MXN",
-	}
-
-	if currency, ok := countryMap[country]; ok {
-		return currency
-	}
-
-	// Default to USD if country not mapped
-	return "USD"
-}
-
-// SetCurrency sets the currency code (for testing/admin purposes)
-func (f *Flags) SetCurrency(currency string) {
-	if f == nil {
-		return
-	}
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.currency = currency
-	f.logger.WithField("currency", currency).Info("Feature flag updated")
+	f.instantPayouts = enabled
+	f.logger.WithField("instantPayouts", enabled).Info("Feature flag updated")
 }
 
 // Shutdown gracefully shuts down the feature management system
@@ -191,8 +97,8 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
 
 3. Replace the Flags struct:
    type Flags struct {
-       MaskAmounts model.RoxFlag
-       logger      *logrus.Logger
+       InstantPayouts model.RoxFlag
+       logger         *logrus.Logger
    }
 
 4. Update Initialize function:
@@ -201,11 +107,12 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
            logger: logger,
        }
 
-       // Register feature flag: api.maskAmounts (default: false)
-       flags.MaskAmounts = model.NewRoxFlag(false)
+       // Register feature flag: payments.instantPayouts (default: false)
+       // This is a HIGH-RISK flag for financial operations
+       flags.InstantPayouts = model.NewRoxFlag(false)
 
        // Register with CloudBees
-       roxx.Register("api", flags)
+       roxx.Register("payments", flags)
 
        // Setup Rox with API key
        options := roxx.NewRoxOptions(roxx.RoxOptionsBuilder{})
@@ -222,12 +129,12 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
        return flags, nil
    }
 
-5. Update ShouldMaskAmounts:
-   func (f *Flags) ShouldMaskAmounts() bool {
-       if f == nil || f.MaskAmounts == nil {
+5. Update IsInstantPayoutsEnabled:
+   func (f *Flags) IsInstantPayoutsEnabled() bool {
+       if f == nil || f.InstantPayouts == nil {
            return false
        }
-       return f.MaskAmounts.IsEnabled(nil)
+       return f.InstantPayouts.IsEnabled(nil)
    }
 
 6. Update Shutdown:
@@ -239,4 +146,10 @@ To integrate with CloudBees Feature Management (Rox SDK), follow these steps:
    }
 
 For more information, see: https://docs.cloudbees.com/docs/cloudbees-feature-management/latest/
+
+IMPORTANT: payments.instantPayouts is a HIGH-RISK feature flag:
+- Instant payouts bypass batch reconciliation and fraud detection
+- Recommended rollout: 5% -> 10% -> 25% -> 50% -> 100% with monitoring at each stage
+- Roll back immediately if fraud rate increases or payment failures spike
+- Only enable during business hours when fraud team can monitor
 */

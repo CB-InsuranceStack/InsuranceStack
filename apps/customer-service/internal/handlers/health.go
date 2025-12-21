@@ -26,7 +26,7 @@ func (h *HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	response := HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now(),
-		Service:   "api-accounts",
+		Service:   "customer-service",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

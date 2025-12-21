@@ -7,149 +7,138 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/CB-AccountStack/AccountStack/apps/api-accounts/internal/models"
+	"github.com/CB-InsuranceStack/InsuranceStack/apps/customer-service/internal/models"
 	"github.com/sirupsen/logrus"
 )
 
-// Repository provides data access for users and accounts
+// Repository provides data access for customers
 type Repository struct {
-	users    map[string]*models.User
-	accounts map[string]*models.Account
-	mu       sync.RWMutex
-	logger   *logrus.Logger
+	customers map[string]*models.Customer
+	mu        sync.RWMutex
+	logger    *logrus.Logger
 }
 
 // NewRepository creates a new repository and loads data from JSON files
 func NewRepository(dataPath string, logger *logrus.Logger) (*Repository, error) {
 	repo := &Repository{
-		users:    make(map[string]*models.User),
-		accounts: make(map[string]*models.Account),
-		logger:   logger,
+		customers: make(map[string]*models.Customer),
+		logger:    logger,
 	}
 
-	// Load users
-	if err := repo.loadUsers(filepath.Join(dataPath, "users.json")); err != nil {
-		return nil, fmt.Errorf("failed to load users: %w", err)
+	// Load customers
+	customersPath := filepath.Join(dataPath, "customers.json")
+	if err := repo.loadCustomers(customersPath); err != nil {
+		// If customers.json doesn't exist, start with empty repository
+		logger.Warnf("Could not load customers from %s: %v. Starting with empty repository.", customersPath, err)
+	} else {
+		logger.Infof("Loaded %d customers from %s", len(repo.customers), dataPath)
 	}
-
-	// Load accounts
-	if err := repo.loadAccounts(filepath.Join(dataPath, "accounts.json")); err != nil {
-		return nil, fmt.Errorf("failed to load accounts: %w", err)
-	}
-
-	logger.Infof("Loaded %d users and %d accounts from %s", len(repo.users), len(repo.accounts), dataPath)
 
 	return repo, nil
 }
 
-// loadUsers loads users from a JSON file
-func (r *Repository) loadUsers(filePath string) error {
+// loadCustomers loads customers from a JSON file
+func (r *Repository) loadCustomers(filePath string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	var users []*models.User
-	if err := json.Unmarshal(data, &users); err != nil {
+	var customers []*models.Customer
+	if err := json.Unmarshal(data, &customers); err != nil {
 		return err
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, user := range users {
-		r.users[user.ID] = user
+	for _, customer := range customers {
+		r.customers[customer.ID] = customer
 	}
 
 	return nil
 }
 
-// loadAccounts loads accounts from a JSON file
-func (r *Repository) loadAccounts(filePath string) error {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return err
+// GetAllCustomers returns all customers
+func (r *Repository) GetAllCustomers() ([]*models.Customer, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	customers := make([]*models.Customer, 0, len(r.customers))
+	for _, customer := range r.customers {
+		customers = append(customers, customer)
 	}
 
-	var accounts []*models.Account
-	if err := json.Unmarshal(data, &accounts); err != nil {
-		return err
+	return customers, nil
+}
+
+// GetCustomerByID retrieves a customer by ID
+func (r *Repository) GetCustomerByID(customerID string) (*models.Customer, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	customer, exists := r.customers[customerID]
+	if !exists {
+		return nil, fmt.Errorf("customer not found")
 	}
 
+	return customer, nil
+}
+
+// GetCustomerByEmail retrieves a customer by email address
+func (r *Repository) GetCustomerByEmail(email string) (*models.Customer, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, customer := range r.customers {
+		if customer.Email == email {
+			return customer, nil
+		}
+	}
+
+	return nil, fmt.Errorf("customer not found")
+}
+
+// CreateCustomer creates a new customer
+func (r *Repository) CreateCustomer(customer *models.Customer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, account := range accounts {
-		r.accounts[account.ID] = account
+	// Check if customer with same ID already exists
+	if _, exists := r.customers[customer.ID]; exists {
+		return fmt.Errorf("customer with ID %s already exists", customer.ID)
 	}
 
+	r.customers[customer.ID] = customer
 	return nil
 }
 
-// GetUserByID retrieves a user by ID
-func (r *Repository) GetUserByID(userID string) (*models.User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+// UpdateCustomer updates an existing customer
+func (r *Repository) UpdateCustomer(customer *models.Customer) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	user, exists := r.users[userID]
-	if !exists {
-		return nil, fmt.Errorf("user not found")
+	// Check if customer exists
+	if _, exists := r.customers[customer.ID]; !exists {
+		return fmt.Errorf("customer not found")
 	}
 
-	return user, nil
+	r.customers[customer.ID] = customer
+	return nil
 }
 
-// GetUserByEmail retrieves a user by email address
-func (r *Repository) GetUserByEmail(email string) (*models.User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+// DeactivateCustomer deactivates a customer (soft delete)
+func (r *Repository) DeactivateCustomer(customerID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	for _, user := range r.users {
-		if user.Email == email {
-			return user, nil
-		}
+	// Check if customer exists
+	if _, exists := r.customers[customerID]; !exists {
+		return fmt.Errorf("customer not found")
 	}
 
-	return nil, fmt.Errorf("user not found")
-}
-
-// GetAccountByID retrieves an account by ID
-func (r *Repository) GetAccountByID(accountID string) (*models.Account, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	account, exists := r.accounts[accountID]
-	if !exists {
-		return nil, fmt.Errorf("account not found")
-	}
-
-	return account, nil
-}
-
-// GetAccountsByUserID retrieves all accounts for a specific user
-func (r *Repository) GetAccountsByUserID(userID string) ([]*models.Account, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var userAccounts []*models.Account
-	for _, account := range r.accounts {
-		if account.UserID == userID {
-			userAccounts = append(userAccounts, account)
-		}
-	}
-
-	return userAccounts, nil
-}
-
-// GetAllUsers returns all users (for testing/admin purposes)
-func (r *Repository) GetAllUsers() []*models.User {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	users := make([]*models.User, 0, len(r.users))
-	for _, user := range r.users {
-		users = append(users, user)
-	}
-
-	return users
+	// In a real implementation, we would set a status field or deletion timestamp
+	// For now, we'll just remove it from the map (hard delete for simplicity)
+	delete(r.customers, customerID)
+	return nil
 }
