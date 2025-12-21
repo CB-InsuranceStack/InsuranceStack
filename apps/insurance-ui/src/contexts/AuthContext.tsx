@@ -35,26 +35,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const response = await fetch('api/accounts/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
+    // Demo authentication - accept demo credentials
+    const validUsername = 'demo@insurancestack.com';
+    const validPassword = 'demo123';
 
-    if (!response.ok) {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    if (username !== validUsername || password !== validPassword) {
       throw new Error('Invalid credentials');
     }
 
-    const data = await response.json();
+    // Create mock user and token for demo
+    const mockUser = {
+      id: 'demo-user-001',
+      email: username,
+      name: 'Demo User',
+    };
+    const mockToken = 'demo-jwt-token-' + Date.now();
 
     // Store token and user info
-    localStorage.setItem('authToken', data.token);
-    localStorage.setItem('authUser', JSON.stringify(data.user));
+    localStorage.setItem('authToken', mockToken);
+    localStorage.setItem('authUser', JSON.stringify(mockUser));
 
-    setToken(data.token);
-    setUser(data.user);
+    setToken(mockToken);
+    setUser(mockUser);
   };
 
   const logout = () => {
