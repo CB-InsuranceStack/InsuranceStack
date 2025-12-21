@@ -24,7 +24,7 @@ export default function Payments() {
 
   // Filter payments
   const filteredPayments = payments?.filter((payment) => {
-    const matchesType = !typeFilter || payment.paymentType === typeFilter;
+    const matchesType = !typeFilter || payment.type === typeFilter;
     const matchesStatus = !statusFilter || payment.status === statusFilter;
     return matchesType && matchesStatus;
   });
@@ -41,7 +41,7 @@ export default function Payments() {
       if (payment.status === 'pending') {
         acc.pendingAmount += payment.amount;
       }
-      if (payment.paymentType === 'premium') {
+      if (payment.type === 'premium') {
         acc.premiumPayments += payment.amount;
       }
 
@@ -294,8 +294,8 @@ export default function Payments() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(payment.paymentType)}`}>
-                        {payment.paymentType.charAt(0).toUpperCase() + payment.paymentType.slice(1)}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(payment.type)}`}>
+                        {payment.type.charAt(0).toUpperCase() + payment.type.slice(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -309,7 +309,7 @@ export default function Payments() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(payment.paymentDate)}</div>
+                      <div className="text-sm text-gray-900">{formatDate(payment.processedDate || payment.createdAt)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 capitalize">

@@ -36,10 +36,11 @@ export default function Customers() {
   const summary = customers?.reduce(
     (acc, customer) => {
       acc.totalCustomers += 1;
-      if (customer.status === 'active') {
-        acc.activeCustomers += 1;
-      } else if (customer.status === 'inactive') {
-        acc.inactiveCustomers += 1;
+      // Count customers by risk score
+      if (customer.riskScore && customer.riskScore <= 2) {
+        acc.activeCustomers += 1; // Low risk
+      } else if (customer.riskScore && customer.riskScore >= 4) {
+        acc.inactiveCustomers += 1; // High risk
       }
       return acc;
     },
@@ -82,19 +83,6 @@ export default function Customers() {
       </div>
     );
   }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'badge-success';
-      case 'inactive':
-        return 'badge-default';
-      case 'suspended':
-        return 'badge-error';
-      default:
-        return 'badge-default';
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -182,7 +170,7 @@ export default function Customers() {
                     Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Risk Score
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Joined
@@ -225,8 +213,8 @@ export default function Customers() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`${getStatusColor(customer.status)}`}>
-                        {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+                      <span className={`badge ${customer.riskScore && customer.riskScore <= 2 ? 'badge-success' : customer.riskScore && customer.riskScore >= 4 ? 'badge-error' : 'badge-warning'}`}>
+                        Risk: {customer.riskScore || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
