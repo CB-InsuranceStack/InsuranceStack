@@ -131,17 +131,21 @@ export default function GetQuote() {
           <AlertBanner
             type="info"
             title="Choose Your Coverage"
-            message="Select the type of insurance coverage you need to get started."
+            message="Click one of the cards below to select your insurance type."
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Select Insurance Type <span className="text-sm font-normal text-gray-500">(Click a card)</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {policyTypes.map((type) => {
               const Icon = type.icon;
               return (
                 <div
                   key={type.id}
                   onClick={() => setPolicyType(type.id)}
-                  className={`card p-8 cursor-pointer transition-all hover:shadow-lg ${
-                    policyType === type.id ? 'ring-2 ring-brand-500' : ''
+                  className={`card p-8 cursor-pointer transition-all hover:shadow-lg hover:border-brand-300 hover:scale-105 ${
+                    policyType === type.id ? 'ring-4 ring-brand-500 shadow-xl' : ''
                   }`}
                 >
                   <div className={`${type.color} rounded-lg p-4 w-fit mb-4`}>
@@ -152,6 +156,7 @@ export default function GetQuote() {
                 </div>
               );
             })}
+            </div>
           </div>
           <div className="flex justify-end">
             <button
