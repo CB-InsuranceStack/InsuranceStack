@@ -70,6 +70,8 @@ jobs:
           IDS: ${{ steps.kaniko-pricing.outputs.artifact-ids }}
         run: |
           set -eu
+          echo "DEBUG: Raw IDS value: '$IDS'"
+          echo "DEBUG: IDS length: ${#IDS}"
           ART_ID=""
           if printf '%s' "$IDS" | grep -q '^map\['; then
             S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
