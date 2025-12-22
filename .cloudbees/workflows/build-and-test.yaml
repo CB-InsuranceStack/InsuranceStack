@@ -442,6 +442,42 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
+      - name: Calculate BASE_PATH for UI
+        id: basepath
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          REPOSITORY: ${{ cloudbees.scm.repository }}
+          BRANCH: ${{ cloudbees.scm.branch }}
+        run: |
+          set -eu
+          # Extract org from repository (format: owner/repo)
+          ORG=$(echo "$REPOSITORY" | cut -d'/' -f1)
+
+          # Determine environment name from branch
+          case "$BRANCH" in
+            main|master)
+              ENV_NAME="dev"
+              ;;
+            staging)
+              ENV_NAME="staging"
+              ;;
+            production|prod)
+              ENV_NAME="prod"
+              ;;
+            *)
+              ENV_NAME="dev"
+              ;;
+          esac
+
+          # Add prefix to environment name
+          ENV_NAME="insurance-stack-${ENV_NAME}"
+
+          # Construct base path: /org/env
+          BASE_PATH="/${ORG}/${ENV_NAME}"
+          printf '%s' "$BASE_PATH" > "$CLOUDBEES_OUTPUTS/value"
+          echo "Base path: $BASE_PATH"
+
       - name: Build Docker image
         kind: build
         id: kaniko-ui
@@ -450,6 +486,7 @@ jobs:
           context: apps/insurance-ui
           dockerfile: apps/insurance-ui/Dockerfile
           destination: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
+          build-args: BASE_PATH=${{ steps.basepath.outputs.value }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 

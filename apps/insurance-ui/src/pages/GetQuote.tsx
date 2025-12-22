@@ -121,12 +121,9 @@ export default function GetQuote() {
       // Show success message
       setSubmitSuccess(true);
 
-      // Invalidate policies cache to trigger refetch on next mount
-      await queryClient.invalidateQueries({ queryKey: ['policies'], refetchType: 'active' });
-
-      // Small delay to show success message, then navigate
+      // Small delay to show success message, then reload to policies page
       setTimeout(() => {
-        navigate('/policies');
+        window.location.href = '/policies';
       }, 800);
     } catch (error) {
       console.error('Failed to create policy:', error);

@@ -97,7 +97,7 @@ policyService:
     targetPort: 8001
   env:
     # Data path for policy data
-    dataPath: "/data/policies"
+    dataPath: "/app/data"
     # Feature flags
     featureApprovalWorkflow: "true"
     featureRiskAssessment: "true"
@@ -139,7 +139,7 @@ claimsService:
     targetPort: 8002
   env:
     # Data path for claims data
-    dataPath: "/data/claims"
+    dataPath: "/app/data"
     # Feature flags
     featureAutoApproval: "false"
     featureFraudDetection: "true"
@@ -181,7 +181,7 @@ pricingEngine:
     targetPort: 8003
   env:
     # Data path for pricing data
-    dataPath: "/data/pricing"
+    dataPath: "/app/data"
     # Feature flags
     featureDynamicPricing: "true"
     featureRealTimeQuotes: "true"
@@ -222,7 +222,7 @@ customerService:
     targetPort: 8004
   env:
     # Data path for customer data
-    dataPath: "/data/customers"
+    dataPath: "/app/data"
     # Feature flags
     featureKYC: "true"
     featureDocumentUpload: "true"
@@ -264,7 +264,7 @@ paymentsService:
     targetPort: 8005
   env:
     # Data path for payment data
-    dataPath: "/data/payments"
+    dataPath: "/app/data"
     # Feature flags
     featureRecurringPayments: "true"
     featureMultiCurrency: "false"
