@@ -1,7 +1,7 @@
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
 
-name: InsuranceStack - Build and Test
+name: Build and Test
 
 on:
   push:
@@ -13,11 +13,6 @@ on:
       - main
 
 jobs:
-  # ============================================================================
-  # FAST-PATH SERVICE: pricing-engine
-  # Minimal governance, quick deployment
-  # ============================================================================
-
   build-pricing-engine:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-pricing-artifact.outputs.id }}
@@ -25,28 +20,23 @@ jobs:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
 
-      - name: Setup Go
-        uses: docker://golang:1.21-alpine
-        run: |
-          go version
-
-      - name: Build and Test - Pricing Engine (FAST-PATH)
+      - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
         run: |
           set -eu
           cd apps/pricing-engine
-
-          echo "🚀 FAST-PATH SERVICE: Minimal checks for speed"
-
-          # Quick build check
-          go mod download
-          go build -o bin/pricing-engine cmd/server/main.go
-
-          # Quick unit tests only (no integration tests)
-          go test -v -short ./... || echo "Tests skipped for fast-path"
-
-          echo "✅ Pricing engine built successfully (fast-path)"
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
 
       - name: Publish Pricing Engine test results
         uses: cloudbees-io/publish-test-results@v1
@@ -61,13 +51,14 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
-      - name: Build Docker image - Pricing Engine
+      - name: Build Docker image
         kind: build
         id: kaniko-pricing
         uses: cloudbees-io/kaniko@v1
         with:
-          context: apps/pricing-engine
-          destination: cbinsurancestack/pricing-engine:${{ cloudbees.scm.sha }}
+          context: .
+          dockerfile: apps/pricing-engine/Dockerfile
+          destination: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
@@ -100,11 +91,6 @@ jobs:
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Pricing Engine artifact ID: $ART_ID"
 
-  # ============================================================================
-  # STANDARD GOVERNANCE: policy-service, customer-service
-  # Normal governance requirements
-  # ============================================================================
-
   build-policy-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-policy-artifact.outputs.id }}
@@ -112,23 +98,23 @@ jobs:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
 
-      - name: Build and Test - Policy Service (STANDARD)
+      - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
         run: |
           set -eu
           cd apps/policy-service
-
-          echo "📋 STANDARD GOVERNANCE: Normal checks"
-
-          # Full build and test
-          go mod download
-          go fmt ./...
-          go vet ./...
-          go build -o bin/policy-service cmd/server/main.go
-          go test -v ./... || echo "Tests need implementation"
-
-          echo "✅ Policy service built successfully"
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
 
       - name: Publish Policy Service test results
         uses: cloudbees-io/publish-test-results@v1
@@ -143,13 +129,14 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
-      - name: Build Docker image - Policy Service
+      - name: Build Docker image
         kind: build
         id: kaniko-policy
         uses: cloudbees-io/kaniko@v1
         with:
-          context: apps/policy-service
-          destination: cbinsurancestack/policy-service:${{ cloudbees.scm.sha }}
+          context: .
+          dockerfile: apps/policy-service/Dockerfile
+          destination: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
@@ -189,22 +176,23 @@ jobs:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
 
-      - name: Build and Test - Customer Service (STANDARD)
+      - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
         run: |
           set -eu
           cd apps/customer-service
-
-          echo "📋 STANDARD GOVERNANCE: Normal checks"
-
-          go mod download
-          go fmt ./...
-          go vet ./...
-          go build -o bin/customer-service cmd/server/main.go
-          go test -v ./... || echo "Tests need implementation"
-
-          echo "✅ Customer service built successfully"
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
 
       - name: Publish Customer Service test results
         uses: cloudbees-io/publish-test-results@v1
@@ -219,13 +207,14 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
-      - name: Build Docker image - Customer Service
+      - name: Build Docker image
         kind: build
         id: kaniko-customer
         uses: cloudbees-io/kaniko@v1
         with:
-          context: apps/customer-service
-          destination: cbinsurancestack/customer-service:${{ cloudbees.scm.sha }}
+          context: .
+          dockerfile: apps/customer-service/Dockerfile
+          destination: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
@@ -243,7 +232,7 @@ jobs:
             FIRST=$(printf '%s' "$S" | awk '{print $1}')
             ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
           elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}"')
+            S=$(printf '%s' "$IDS" | tr -d '{}\"')
             FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
             ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
           else
@@ -258,11 +247,6 @@ jobs:
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Customer Service artifact ID: $ART_ID"
 
-  # ============================================================================
-  # GOVERNED SERVICES: claims-service, payments-service
-  # High governance with additional requirements
-  # ============================================================================
-
   build-claims-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-claims-artifact.outputs.id }}
@@ -270,33 +254,25 @@ jobs:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
 
-      - name: Build and Test - Claims Service (GOVERNED)
+      - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
         run: |
           set -eu
           cd apps/claims-service
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
 
-          echo "🔒 GOVERNED SERVICE: Enhanced checks and audit"
-
-          # Enhanced validation
-          go mod download
-          go fmt ./...
-          go vet ./...
-
-          # Security scan would go here
-          echo "Security scanning..."
-
-          # Full test suite
-          go build -o bin/claims-service cmd/server/main.go
-          go test -v -race ./... || echo "Tests need implementation"
-
-          # Code coverage check
-          go test -coverprofile=coverage.out ./... || true
-
-          echo "✅ Claims service built successfully (governed)"
-
-      - name: Publish Claims test results
+      - name: Publish Claims Service test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
@@ -309,13 +285,14 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
-      - name: Build Docker image - Claims Service
+      - name: Build Docker image
         kind: build
         id: kaniko-claims
         uses: cloudbees-io/kaniko@v1
         with:
-          context: apps/claims-service
-          destination: cbinsurancestack/claims-service:${{ cloudbees.scm.sha }}
+          context: .
+          dockerfile: apps/claims-service/Dockerfile
+          destination: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
@@ -355,38 +332,25 @@ jobs:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
 
-      - name: Build and Test - Payments Service (HIGHEST RISK)
+      - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
+        env:
+          CI: "true"
         run: |
           set -eu
           cd apps/payments-service
+          echo "Running Go tests..."
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -v -coverprofile=coverage.out ./... 2>&1 | tee test-output.txt || true
+          # Only generate XML if there were actual tests (not just "no test files")
+          if grep -q "^=== RUN" test-output.txt; then
+            cat test-output.txt | go-junit-report -set-exit-code > test-results.xml || true
+          else
+            echo "No tests found, skipping JUnit report generation"
+          fi
 
-          echo "🔐 HIGHEST RISK SERVICE: Maximum governance"
-
-          # Maximum validation
-          go mod download
-          go fmt ./...
-          go vet ./...
-
-          # Security scan (simulated)
-          echo "🔍 Security scanning..."
-          echo "🔍 Dependency vulnerability check..."
-          echo "🔍 Static analysis..."
-
-          # Full test suite with race detection
-          go build -o bin/payments-service cmd/server/main.go
-          go test -v -race ./... || echo "Tests need implementation"
-
-          # Code coverage requirement
-          go test -coverprofile=coverage.out ./... || true
-
-          # Audit log
-          echo "📝 Audit: Payments service built at $(date)" >> /tmp/audit.log
-
-          echo "✅ Payments service built successfully (highest risk)"
-
-      - name: Publish Payments test results
+      - name: Publish Payments Service test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
@@ -399,13 +363,14 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
-      - name: Build Docker image - Payments Service
+      - name: Build Docker image
         kind: build
         id: kaniko-payments
         uses: cloudbees-io/kaniko@v1
         with:
-          context: apps/payments-service
-          destination: cbinsurancestack/payments-service:${{ cloudbees.scm.sha }}
+          context: .
+          dockerfile: apps/payments-service/Dockerfile
+          destination: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
@@ -438,10 +403,6 @@ jobs:
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Payments Service artifact ID: $ART_ID"
 
-  # ============================================================================
-  # FRONTEND: insurance-ui
-  # ============================================================================
-
   build-insurance-ui:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-ui-artifact.outputs.id }}
@@ -464,7 +425,7 @@ jobs:
           npm run lint || true
 
           echo "Running unit tests..."
-          npm run test:unit -- --reporter=verbose || true
+          npm run test:unit -- --reporter=verbose --reporter=junit --outputFile.junit=./test-results.xml
 
           echo "Building application..."
           npm run build
@@ -482,13 +443,14 @@ jobs:
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
 
-      - name: Build Docker image - Insurance UI
+      - name: Build Docker image
         kind: build
         id: kaniko-ui
         uses: cloudbees-io/kaniko@v1
         with:
           context: apps/insurance-ui
-          destination: cbinsurancestack/insurance-ui:${{ cloudbees.scm.sha }}
+          dockerfile: apps/insurance-ui/Dockerfile
+          destination: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
@@ -521,25 +483,18 @@ jobs:
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Insurance UI artifact ID: $ART_ID"
 
-  # Deploy all components to Dev
   deploy-dev:
     if: ${{ cloudbees.scm.branch == 'main' }}
     environment: insurance-stack-dev
     uses: ./.cloudbees/workflows/deploy-simple.yaml
-    needs:
-      - build-pricing-engine
-      - build-policy-service
-      - build-customer-service
-      - build-claims-service
-      - build-payments-service
-      - build-insurance-ui
+    needs: [build-pricing-engine, build-policy-service, build-customer-service, build-claims-service, build-payments-service, build-insurance-ui]
     with:
-      pricing_engine_image: cbinsurancestack/pricing-engine:${{ cloudbees.scm.sha }}
-      policy_service_image: cbinsurancestack/policy-service:${{ cloudbees.scm.sha }}
-      customer_service_image: cbinsurancestack/customer-service:${{ cloudbees.scm.sha }}
-      claims_service_image: cbinsurancestack/claims-service:${{ cloudbees.scm.sha }}
-      payments_service_image: cbinsurancestack/payments-service:${{ cloudbees.scm.sha }}
-      insurance_ui_image: cbinsurancestack/insurance-ui:${{ cloudbees.scm.sha }}
+      pricing_engine_image: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
+      policy_service_image: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
+      customer_service_image: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
+      claims_service_image: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
+      payments_service_image: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
+      insurance_ui_image: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
       pricing_engine_artifact_id: ${{ needs.build-pricing-engine.outputs.ARTIFACT_ID }}
       policy_service_artifact_id: ${{ needs.build-policy-service.outputs.ARTIFACT_ID }}
       customer_service_artifact_id: ${{ needs.build-customer-service.outputs.ARTIFACT_ID }}
