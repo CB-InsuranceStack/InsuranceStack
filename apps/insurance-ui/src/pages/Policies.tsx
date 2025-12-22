@@ -16,6 +16,8 @@ export default function Policies() {
     queryKey: ['policies'],
     queryFn: () => api.getPolicies(),
     refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Consider data stale immediately
   });
 
   // Calculate summary statistics

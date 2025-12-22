@@ -116,18 +116,18 @@ export default function GetQuote() {
         endDate: endDate.toISOString(),
       };
 
-      await api.createPolicy(policyData);
-
-      // Invalidate policies cache so the list refreshes automatically
-      queryClient.invalidateQueries({ queryKey: ['policies'] });
+      const newPolicy = await api.createPolicy(policyData);
 
       // Show success message
       setSubmitSuccess(true);
 
-      // Redirect to policies page after a brief delay
+      // Invalidate policies cache to trigger refetch on next mount
+      await queryClient.invalidateQueries({ queryKey: ['policies'], refetchType: 'active' });
+
+      // Small delay to show success message, then navigate
       setTimeout(() => {
         navigate('/policies');
-      }, 1500);
+      }, 800);
     } catch (error) {
       console.error('Failed to create policy:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create policy. Please try again.');
