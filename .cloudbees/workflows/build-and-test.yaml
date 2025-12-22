@@ -48,6 +48,13 @@ jobs:
 
           echo "✅ Pricing engine built successfully (fast-path)"
 
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.IStack_docker_user }}
+          password: ${{ secrets.IStack_docker_token }}
+
       - name: Build Docker image - Pricing Engine
         kind: build
         id: kaniko-pricing
@@ -117,6 +124,13 @@ jobs:
 
           echo "✅ Policy service built successfully"
 
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.IStack_docker_user }}
+          password: ${{ secrets.IStack_docker_token }}
+
       - name: Build Docker image - Policy Service
         kind: build
         id: kaniko-policy
@@ -179,6 +193,13 @@ jobs:
           go test -v ./... || echo "Tests need implementation"
 
           echo "✅ Customer service built successfully"
+
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.IStack_docker_user }}
+          password: ${{ secrets.IStack_docker_token }}
 
       - name: Build Docker image - Customer Service
         kind: build
@@ -263,6 +284,13 @@ jobs:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/claims-service
 
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.IStack_docker_user }}
+          password: ${{ secrets.IStack_docker_token }}
+
       - name: Build Docker image - Claims Service
         kind: build
         id: kaniko-claims
@@ -346,6 +374,13 @@ jobs:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/payments-service
 
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.IStack_docker_user }}
+          password: ${{ secrets.IStack_docker_token }}
+
       - name: Build Docker image - Payments Service
         kind: build
         id: kaniko-payments
@@ -422,6 +457,13 @@ jobs:
           test-type: junit
           folder-name: ${{ cloudbees.workspace }}/apps/insurance-ui
 
+      - name: Configure Docker credentials
+        uses: cloudbees-io/configure-oci-credentials@v1
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ vars.IStack_docker_user }}
+          password: ${{ secrets.IStack_docker_token }}
+
       - name: Build Docker image - Insurance UI
         kind: build
         id: kaniko-ui
@@ -461,49 +503,7 @@ jobs:
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Insurance UI artifact ID: $ART_ID"
 
-  # ============================================================================
-  # SUMMARY AND GOVERNANCE REPORT
-  # ============================================================================
-
-  governance-summary:
-    needs:
-      - build-pricing-engine
-      - build-policy-service
-      - build-customer-service
-      - build-claims-service
-      - build-payments-service
-      - build-insurance-ui
-    steps:
-      - name: Generate Governance Report
-        uses: docker://alpine:3.20
-        run: |
-          echo "========================================"
-          echo "   InsuranceStack Governance Summary"
-          echo "========================================"
-          echo ""
-          echo "✅ FAST-PATH (1 service):"
-          echo "   - pricing-engine: Built and ready for immediate deployment"
-          echo ""
-          echo "✅ STANDARD GOVERNANCE (2 services):"
-          echo "   - policy-service: Built"
-          echo "   - customer-service: Built"
-          echo ""
-          echo "⚠️  GOVERNED (2 services - REQUIRE APPROVAL):"
-          echo "   - claims-service: Built, awaiting approval"
-          echo "   - payments-service: Built, awaiting Finance + Engineering approval"
-          echo ""
-          echo "✅ FRONTEND:"
-          echo "   - insurance-ui: Built"
-          echo ""
-          echo "========================================"
-          echo "Next: Deploy workflow will handle governance-based deployment"
-          echo "========================================"
-
-  # ============================================================================
-  # DEPLOY TO DEV
-  # Automatically deploy to dev environment on main branch
-  # ============================================================================
-
+  # Deploy all components to Dev
   deploy-dev:
     if: ${{ cloudbees.scm.branch == 'main' }}
     environment: insurance-stack-dev
