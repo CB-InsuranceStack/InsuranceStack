@@ -48,6 +48,12 @@ jobs:
 
           echo "✅ Pricing engine built successfully (fast-path)"
 
+      - name: Publish Pricing Engine test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: go
+          folder-name: ${{ cloudbees.workspace }}/apps/pricing-engine
+
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
@@ -124,6 +130,12 @@ jobs:
 
           echo "✅ Policy service built successfully"
 
+      - name: Publish Policy Service test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: go
+          folder-name: ${{ cloudbees.workspace }}/apps/policy-service
+
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
@@ -193,6 +205,12 @@ jobs:
           go test -v ./... || echo "Tests need implementation"
 
           echo "✅ Customer service built successfully"
+
+      - name: Publish Customer Service test results
+        uses: cloudbees-io/publish-test-results@v1
+        with:
+          test-type: go
+          folder-name: ${{ cloudbees.workspace }}/apps/customer-service
 
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
