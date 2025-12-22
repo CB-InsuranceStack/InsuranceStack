@@ -70,28 +70,24 @@ jobs:
           IDS: ${{ steps.kaniko-pricing.outputs.artifact-ids }}
         run: |
           set -eu
-          echo "DEBUG: Raw IDS value: '$IDS'" 
-          echo "DEBUG: IDS length: ${#IDS}"
           echo "DEBUG: Raw IDS value: '$IDS'"
           echo "DEBUG: IDS length: ${#IDS}"
-          ART_ID=""
-          if printf '%s' "$IDS" | grep -q '^map\['; then
-            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
-            FIRST=$(printf '%s' "$S" | awk '{print $1}')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}\"')
-            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          else
-            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+
+          # Extract UUID directly using grep -o (works for any format)
+          ART_ID=$(echo "$IDS" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "$ART_ID" ]; then
+            echo "ERROR: Could not extract UUID from artifact-ids output" >&2
+            echo "Raw output was: $IDS" >&2
+            exit 1
           fi
-          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+
           case "$ART_ID" in
             ????????-????-????-????-????????????) : ;;
             *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
           esac
+
+          echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Pricing Engine artifact ID: $ART_ID"
 
@@ -151,26 +147,24 @@ jobs:
           IDS: ${{ steps.kaniko-policy.outputs.artifact-ids }}
         run: |
           set -eu
-          echo "DEBUG: Raw IDS value: '$IDS'" 
+          echo "DEBUG: Raw IDS value: '$IDS'"
           echo "DEBUG: IDS length: ${#IDS}"
-          ART_ID=""
-          if printf '%s' "$IDS" | grep -q '^map\['; then
-            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
-            FIRST=$(printf '%s' "$S" | awk '{print $1}')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}\"')
-            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          else
-            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+
+          # Extract UUID directly using grep -o (works for any format)
+          ART_ID=$(echo "$IDS" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "$ART_ID" ]; then
+            echo "ERROR: Could not extract UUID from artifact-ids output" >&2
+            echo "Raw output was: $IDS" >&2
+            exit 1
           fi
-          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+
           case "$ART_ID" in
             ????????-????-????-????-????????????) : ;;
             *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
           esac
+
+          echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Policy Service artifact ID: $ART_ID"
 
@@ -231,26 +225,24 @@ jobs:
           IDS: ${{ steps.kaniko-customer.outputs.artifact-ids }}
         run: |
           set -eu
-          echo "DEBUG: Raw IDS value: '$IDS'" 
+          echo "DEBUG: Raw IDS value: '$IDS'"
           echo "DEBUG: IDS length: ${#IDS}"
-          ART_ID=""
-          if printf '%s' "$IDS" | grep -q '^map\['; then
-            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
-            FIRST=$(printf '%s' "$S" | awk '{print $1}')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}\"')
-            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          else
-            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+
+          # Extract UUID directly using grep -o (works for any format)
+          ART_ID=$(echo "$IDS" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "$ART_ID" ]; then
+            echo "ERROR: Could not extract UUID from artifact-ids output" >&2
+            echo "Raw output was: $IDS" >&2
+            exit 1
           fi
-          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+
           case "$ART_ID" in
             ????????-????-????-????-????????????) : ;;
             *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
           esac
+
+          echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Customer Service artifact ID: $ART_ID"
 
@@ -311,26 +303,24 @@ jobs:
           IDS: ${{ steps.kaniko-claims.outputs.artifact-ids }}
         run: |
           set -eu
-          echo "DEBUG: Raw IDS value: '$IDS'" 
+          echo "DEBUG: Raw IDS value: '$IDS'"
           echo "DEBUG: IDS length: ${#IDS}"
-          ART_ID=""
-          if printf '%s' "$IDS" | grep -q '^map\['; then
-            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
-            FIRST=$(printf '%s' "$S" | awk '{print $1}')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}\"')
-            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          else
-            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+
+          # Extract UUID directly using grep -o (works for any format)
+          ART_ID=$(echo "$IDS" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "$ART_ID" ]; then
+            echo "ERROR: Could not extract UUID from artifact-ids output" >&2
+            echo "Raw output was: $IDS" >&2
+            exit 1
           fi
-          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+
           case "$ART_ID" in
             ????????-????-????-????-????????????) : ;;
             *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
           esac
+
+          echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Claims Service artifact ID: $ART_ID"
 
@@ -391,26 +381,24 @@ jobs:
           IDS: ${{ steps.kaniko-payments.outputs.artifact-ids }}
         run: |
           set -eu
-          echo "DEBUG: Raw IDS value: '$IDS'" 
+          echo "DEBUG: Raw IDS value: '$IDS'"
           echo "DEBUG: IDS length: ${#IDS}"
-          ART_ID=""
-          if printf '%s' "$IDS" | grep -q '^map\['; then
-            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
-            FIRST=$(printf '%s' "$S" | awk '{print $1}')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}\"')
-            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          else
-            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+
+          # Extract UUID directly using grep -o (works for any format)
+          ART_ID=$(echo "$IDS" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "$ART_ID" ]; then
+            echo "ERROR: Could not extract UUID from artifact-ids output" >&2
+            echo "Raw output was: $IDS" >&2
+            exit 1
           fi
-          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+
           case "$ART_ID" in
             ????????-????-????-????-????????????) : ;;
             *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
           esac
+
+          echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Payments Service artifact ID: $ART_ID"
 
@@ -473,26 +461,24 @@ jobs:
           IDS: ${{ steps.kaniko-ui.outputs.artifact-ids }}
         run: |
           set -eu
-          echo "DEBUG: Raw IDS value: '$IDS'" 
+          echo "DEBUG: Raw IDS value: '$IDS'"
           echo "DEBUG: IDS length: ${#IDS}"
-          ART_ID=""
-          if printf '%s' "$IDS" | grep -q '^map\['; then
-            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
-            FIRST=$(printf '%s' "$S" | awk '{print $1}')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
-            S=$(printf '%s' "$IDS" | tr -d '{}\"')
-            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
-          else
-            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
-            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+
+          # Extract UUID directly using grep -o (works for any format)
+          ART_ID=$(echo "$IDS" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "$ART_ID" ]; then
+            echo "ERROR: Could not extract UUID from artifact-ids output" >&2
+            echo "Raw output was: $IDS" >&2
+            exit 1
           fi
-          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+
           case "$ART_ID" in
             ????????-????-????-????-????????????) : ;;
             *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
           esac
+
+          echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Insurance UI artifact ID: $ART_ID"
 
