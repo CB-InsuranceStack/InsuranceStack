@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Shield, TrendingUp, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
@@ -8,6 +9,7 @@ import AlertBanner from '../components/AlertBanner';
 import type { Policy } from '../types';
 
 export default function Policies() {
+  const navigate = useNavigate();
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null);
   // Fetch policies data
   const {
@@ -180,7 +182,10 @@ export default function Policies() {
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate('/claims')}
+            className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <div className="bg-brand-100 rounded-lg p-2">
               <AlertCircle className="w-5 h-5 text-brand-600" />
             </div>
@@ -190,7 +195,10 @@ export default function Policies() {
             </div>
           </button>
 
-          <button className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate('/claims')}
+            className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <div className="bg-green-100 rounded-lg p-2">
               <FileText className="w-5 h-5 text-green-600" />
             </div>
@@ -200,7 +208,10 @@ export default function Policies() {
             </div>
           </button>
 
-          <button className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate('/quote')}
+            className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <div className="bg-purple-100 rounded-lg p-2">
               <TrendingUp className="w-5 h-5 text-purple-600" />
             </div>
