@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { AlertCircle, X, Info, AlertTriangle } from 'lucide-react';
+import { AlertCircle, X, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import useRoxFlag from '../hooks/useRoxFlag';
 
 interface AlertBannerProps {
-  type?: 'info' | 'warning' | 'critical';
+  type?: 'info' | 'success' | 'warning' | 'critical';
   title: string;
   message: string;
   dismissible?: boolean;
@@ -29,6 +29,12 @@ export default function AlertBanner({
       border: 'border-blue-200',
       text: 'text-blue-800',
       icon: Info,
+    },
+    success: {
+      bg: 'bg-green-50',
+      border: 'border-green-200',
+      text: 'text-green-800',
+      icon: CheckCircle,
     },
     warning: {
       bg: 'bg-yellow-50',
