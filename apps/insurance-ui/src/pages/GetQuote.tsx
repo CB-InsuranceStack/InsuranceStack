@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DollarSign, Car, Home, Heart, Activity, Shield, CheckCircle } from 'lucide-react';
 import AlertBanner from '../components/AlertBanner';
+import { api } from '../services/api';
 
 export default function GetQuote() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [policyType, setPolicyType] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -18,6 +21,9 @@ export default function GetQuote() {
     coverage: number;
     deductible: number;
   } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const policyTypes = [
     {
@@ -78,6 +84,51 @@ export default function GetQuote() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleAcceptQuote = async () => {
+    if (!quoteResult) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Generate policy number
+      const timestamp = Date.now();
+      const typePrefix = policyType.toUpperCase();
+      const policyNumber = `${typePrefix}-${new Date().getFullYear()}-${timestamp.toString().slice(-6)}`;
+
+      // Calculate dates (policy starts today, ends in 1 year)
+      const startDate = new Date().toISOString();
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1);
+
+      // Create the policy with the quote data
+      const policyData = {
+        policyNumber,
+        type: policyType,
+        premium: quoteResult.premium,
+        coverage: quoteResult.coverage,
+        deductible: quoteResult.deductible,
+        startDate,
+        endDate: endDate.toISOString(),
+      };
+
+      await api.createPolicy(policyData);
+
+      // Show success message
+      setSubmitSuccess(true);
+
+      // Redirect to policies page after a brief delay
+      setTimeout(() => {
+        navigate('/policies');
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to create policy:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create policy. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -300,11 +351,25 @@ export default function GetQuote() {
       {/* Step 3: Quote Result */}
       {step === 3 && quoteResult && (
         <div className="space-y-6">
-          <AlertBanner
-            type="info"
-            title="Your Quote is Ready!"
-            message="Review your quote below and accept it to create a new policy."
-          />
+          {submitSuccess ? (
+            <AlertBanner
+              type="success"
+              title="Policy Created Successfully!"
+              message="Your new policy has been created. Redirecting to your policies..."
+            />
+          ) : submitError ? (
+            <AlertBanner
+              type="critical"
+              title="Error Creating Policy"
+              message={submitError}
+            />
+          ) : (
+            <AlertBanner
+              type="info"
+              title="Your Quote is Ready!"
+              message="Review your quote below and accept it to create a new policy."
+            />
+          )}
 
           <div className="card p-8">
             <div className="text-center mb-8">
@@ -379,13 +444,20 @@ export default function GetQuote() {
                     phone: '',
                   });
                   setQuoteResult(null);
+                  setSubmitError(null);
+                  setSubmitSuccess(false);
                 }}
                 className="btn-secondary flex-1"
+                disabled={isSubmitting}
               >
                 Get Another Quote
               </button>
-              <button className="btn-primary flex-1">
-                Accept Quote & Create Policy
+              <button
+                onClick={handleAcceptQuote}
+                disabled={isSubmitting || submitSuccess}
+                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Creating Policy...' : submitSuccess ? 'Policy Created!' : 'Accept Quote & Create Policy'}
               </button>
             </div>
           </div>

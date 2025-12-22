@@ -163,6 +163,8 @@ func (r *Repository) CreatePolicy(req models.CreatePolicyRequest) (*models.Polic
 		Type:         req.Type,
 		Status:       "active",
 		Premium:      req.Premium,
+		Coverage:     req.Coverage,
+		Deductible:   req.Deductible,
 		Currency:     "USD",
 		StartDate:    req.StartDate,
 		EndDate:      req.EndDate,

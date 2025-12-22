@@ -72,6 +72,8 @@ type CreatePolicyRequest struct {
 	PolicyNumber string    `json:"policyNumber"`
 	Type         string    `json:"type"`
 	Premium      float64   `json:"premium"`
+	Coverage     float64   `json:"coverage"`
+	Deductible   float64   `json:"deductible"`
 	StartDate    time.Time `json:"startDate"`
 	EndDate      time.Time `json:"endDate"`
 }
