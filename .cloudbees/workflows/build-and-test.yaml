@@ -56,7 +56,7 @@ jobs:
           context: apps/pricing-engine
           destination: cbinsurancestack/pricing-engine:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.url }}
+            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
             governance-tier=fast-path
             risk-level=low
 
@@ -98,7 +98,7 @@ jobs:
           context: apps/policy-service
           destination: cbinsurancestack/policy-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.url }}
+            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
             governance-tier=standard
             risk-level=medium
 
@@ -134,7 +134,7 @@ jobs:
           context: apps/customer-service
           destination: cbinsurancestack/customer-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.url }}
+            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
             governance-tier=standard
             risk-level=medium
 
@@ -219,7 +219,7 @@ jobs:
           context: apps/claims-service
           destination: cbinsurancestack/claims-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.url }}
+            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
             governance-tier=governed
             risk-level=high
             requires-approval=true
@@ -276,7 +276,7 @@ jobs:
           context: apps/payments-service
           destination: cbinsurancestack/payments-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.url }}
+            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
             governance-tier=governed
             risk-level=critical
             requires-approval=true
@@ -328,7 +328,7 @@ jobs:
           context: apps/insurance-ui
           destination: cbinsurancestack/insurance-ui:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.url }}
+            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
             governance-tier=standard
             risk-level=low
 
