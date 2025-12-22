@@ -3,6 +3,7 @@ kind: workflow
 
 name: InsuranceStack - Build and Test
 
+
 on:
   push:
     branches:
