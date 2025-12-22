@@ -59,6 +59,35 @@ jobs:
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
+      - name: Parse Pricing Engine artifact ID
+        id: parse-pricing-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-pricing.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}\"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Pricing Engine artifact ID: $ART_ID"
+
   # ============================================================================
   # STANDARD GOVERNANCE: policy-service, customer-service
   # Normal governance requirements
@@ -98,6 +127,35 @@ jobs:
           destination: cbinsurancestack/policy-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
+
+      - name: Parse Policy Service artifact ID
+        id: parse-policy-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-policy.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}\"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Policy Service artifact ID: $ART_ID"
 
   build-customer-service:
     outputs:
@@ -216,6 +274,35 @@ jobs:
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
+      - name: Parse Claims Service artifact ID
+        id: parse-claims-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-claims.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}\"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Claims Service artifact ID: $ART_ID"
+
   build-payments-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-payments-artifact.outputs.id }}
@@ -270,6 +357,35 @@ jobs:
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
+      - name: Parse Payments Service artifact ID
+        id: parse-payments-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-payments.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}\"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Payments Service artifact ID: $ART_ID"
+
   # ============================================================================
   # FRONTEND: insurance-ui
   # ============================================================================
@@ -316,6 +432,35 @@ jobs:
           destination: cbinsurancestack/insurance-ui:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
+
+      - name: Parse Insurance UI artifact ID
+        id: parse-ui-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-ui.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}\"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Insurance UI artifact ID: $ART_ID"
 
   # ============================================================================
   # SUMMARY AND GOVERNANCE REPORT
