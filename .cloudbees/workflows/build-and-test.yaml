@@ -56,9 +56,7 @@ jobs:
           context: apps/pricing-engine
           destination: cbinsurancestack/pricing-engine:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
-            governance-tier=fast-path
-            risk-level=low
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
   # ============================================================================
   # STANDARD GOVERNANCE: policy-service, customer-service
@@ -98,9 +96,7 @@ jobs:
           context: apps/policy-service
           destination: cbinsurancestack/policy-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
-            governance-tier=standard
-            risk-level=medium
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
   build-customer-service:
     outputs:
@@ -134,9 +130,7 @@ jobs:
           context: apps/customer-service
           destination: cbinsurancestack/customer-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
-            governance-tier=standard
-            risk-level=medium
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
       - name: Parse Customer Service artifact ID
         id: parse-customer-artifact
@@ -219,10 +213,7 @@ jobs:
           context: apps/claims-service
           destination: cbinsurancestack/claims-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
-            governance-tier=governed
-            risk-level=high
-            requires-approval=true
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
   build-payments-service:
     outputs:
@@ -276,12 +267,7 @@ jobs:
           context: apps/payments-service
           destination: cbinsurancestack/payments-service:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
-            governance-tier=governed
-            risk-level=critical
-            requires-approval=true
-            requires-finance-approval=true
-            deployment-window=business-hours-only
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
   # ============================================================================
   # FRONTEND: insurance-ui
@@ -328,9 +314,7 @@ jobs:
           context: apps/insurance-ui
           destination: cbinsurancestack/insurance-ui:${{ cloudbees.scm.sha }}
           labels: |
-            org.opencontainers.image.source=${{ cloudbees.scm.repositoryUrl }}
-            governance-tier=standard
-            risk-level=low
+            org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
 
   # ============================================================================
   # SUMMARY AND GOVERNANCE REPORT
