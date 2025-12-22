@@ -1,7 +1,6 @@
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
-
-name: InsuranceStack - Deploy with Governance
+name: Deploy InsuranceStack
 
 on:
   workflow_call:
@@ -51,72 +50,187 @@ on:
       repository:
         type: string
         required: true
-  workflow_dispatch:
 
 jobs:
-  # FAST-PATH: pricing-engine - No approval required
-  deploy-pricing-engine:
+  deploy:
+    environment: ${{ inputs.environment_name }}
+
     steps:
-      - name: Deploy Pricing Engine (FAST-PATH)
+      - name: Checkout
+        uses: cloudbees-io/checkout@v1
+
+      - name: Extract organization from repository
+        id: org
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          REPOSITORY: ${{ inputs.repository }}
+        run: |
+          set -eu
+          # Extract owner from repository (format: owner/repo)
+          ORG=$(echo "$REPOSITORY" | cut -d'/' -f1)
+          echo "Organization: $ORG"
+          printf '%s' "$ORG" > "$CLOUDBEES_OUTPUTS/name"
+
+      - name: Build deployment metadata
+        id: metadata
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          ENVIRONMENT_NAME: ${{ inputs.environment_name }}
+        run: |
+          set -eu
+
+          # Short SHA (12 chars)
+          SHORT_SHA=$(echo "$COMMIT_SHA" | cut -c1-12)
+          printf '%s' "$SHORT_SHA" > "$CLOUDBEES_OUTPUTS/sha12"
+          echo "Short SHA: $SHORT_SHA"
+
+          # Short version (first 7 chars of SHA)
+          SHORT_VER=$(echo "$COMMIT_SHA" | cut -c1-7)
+          printf '%s' "$SHORT_VER" > "$CLOUDBEES_OUTPUTS/ver"
+          echo "Version: $SHORT_VER"
+
+          # Timestamp
+          TIMESTAMP=$(date -u +%Y%m%d%H%M%S)
+          printf '%s' "$TIMESTAMP" > "$CLOUDBEES_OUTPUTS/ts"
+          echo "Timestamp: $TIMESTAMP"
+
+          # Environment code (shortened for labels)
+          case "$ENVIRONMENT_NAME" in
+            insurance-stack-dev)
+              ENV_CODE="dev"
+              ;;
+            insurance-stack-staging)
+              ENV_CODE="staging"
+              ;;
+            insurance-stack-prod)
+              ENV_CODE="prod"
+              ;;
+            *)
+              # Use first 8 chars of environment name
+              ENV_CODE=$(echo "$ENVIRONMENT_NAME" | cut -c1-8)
+              ;;
+          esac
+          printf '%s' "$ENV_CODE" > "$CLOUDBEES_OUTPUTS/code"
+          echo "Environment code: $ENV_CODE"
+
+      - name: Deploy InsuranceStack
         uses: docker://alpine:3.20
         run: |
-          echo "FAST-PATH DEPLOYMENT: pricing-engine"
-          echo "No approval required - deploying immediately"
-          echo "Deployed successfully"
+          echo "========================================"
+          echo "   InsuranceStack Deployment"
+          echo "========================================"
+          echo ""
+          echo "Environment: ${{ inputs.environment_name }}"
+          echo "Commit SHA: ${{ inputs.commit_sha }}"
+          echo "Organization: ${{ steps.org.outputs.name }}"
+          echo ""
+          echo "Images:"
+          echo "  - Pricing Engine: ${{ inputs.pricing_engine_image }}"
+          echo "  - Policy Service: ${{ inputs.policy_service_image }}"
+          echo "  - Customer Service: ${{ inputs.customer_service_image }}"
+          echo "  - Claims Service: ${{ inputs.claims_service_image }}"
+          echo "  - Payments Service: ${{ inputs.payments_service_image }}"
+          echo "  - Insurance UI: ${{ inputs.insurance_ui_image }}"
+          echo ""
+          echo "✅ Deployment simulated successfully"
+          echo "========================================"
 
-  # STANDARD: policy-service, customer-service - Team approval
-  deploy-policy-service:
-    steps:
-      - name: Request approval for Policy Service
-        uses: cloudbees-io/wait-for-approval@v1
+      - name: Register Pricing Engine artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
         with:
-          message: "Deploy policy-service? (STANDARD governance)"
-          approvers: "engineering-leads"
+          artifact-id: ${{ inputs.pricing_engine_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
 
-      - name: Deploy Policy Service
-        uses: docker://alpine:3.20
-        run: |
-          echo "STANDARD DEPLOYMENT: policy-service"
-          echo "Deployed with team approval"
-
-  # GOVERNED: claims-service - CAB approval
-  deploy-claims-service:
-    steps:
-      - name: Request CAB approval for Claims Service
-        uses: cloudbees-io/wait-for-approval@v1
+      - name: Register Policy Service artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
         with:
-          message: "Deploy claims-service? (GOVERNED - requires CAB approval)"
-          approvers: "change-advisory-board,engineering-leads"
-          minimum-approvals: 2
+          artifact-id: ${{ inputs.policy_service_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
 
-      - name: Deploy Claims Service
-        uses: docker://alpine:3.20
-        run: |
-          echo "GOVERNED DEPLOYMENT: claims-service"
-          echo "Deployed with CAB approval"
-
-  # CRITICAL: payments-service - Finance + Engineering approval
-  deploy-payments-service:
-    steps:
-      - name: Security scan for Payments Service
-        uses: docker://alpine:3.20
-        run: |
-          echo "Running security and compliance checks..."
-          echo "Security scan: PASS"
-          echo "PCI DSS compliance: PASS"
-          echo "SOX compliance: PASS"
-
-      - name: Request Finance + Engineering approval
-        uses: cloudbees-io/wait-for-approval@v1
+      - name: Register Customer Service artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
         with:
-          message: "CRITICAL: Deploy payments-service? (Requires Finance + Engineering + CAB)"
-          approvers: "finance-team,engineering-leads,change-advisory-board"
-          minimum-approvals: 3
+          artifact-id: ${{ inputs.customer_service_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
 
-      - name: Deploy Payments Service
-        uses: docker://alpine:3.20
-        run: |
-          echo "HIGHEST RISK DEPLOYMENT: payments-service"
-          echo "Deployed with maximum governance"
-          echo "Enhanced monitoring: ACTIVE"
-          echo "Fraud detection: ACTIVE"
+      - name: Register Claims Service artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.claims_service_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Register Payments Service artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.payments_service_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Register Insurance UI artifact
+        kind: deploy
+        uses: cloudbees-io/register-deployed-artifact@v2
+        with:
+          artifact-id: ${{ inputs.ui_artifact_id }}
+          target-environment: ${{ inputs.environment_name }}
+          labels: >
+            ver=${{ steps.metadata.outputs.ver }},
+            sha=${{ steps.metadata.outputs.sha12 }},
+            ts=${{ steps.metadata.outputs.ts }},
+            d.${{ steps.metadata.outputs.code }}=true
+
+      - name: Publish deployment evidence
+        kind: deploy
+        uses: cloudbees-io/publish-evidence-item@v1
+        with:
+          format: MARKDOWN
+          content: |
+            ## Deployed: InsuranceStack (All Components)
+
+            **Environment:** `${{ inputs.environment_name }}`
+            **Repository:** `${{ inputs.repository }}`
+            **Commit:** `${{ inputs.commit_sha }}`
+
+            ### Components Deployed
+            - **Pricing Engine:** `${{ inputs.pricing_engine_image }}`
+            - **Policy Service:** `${{ inputs.policy_service_image }}`
+            - **Customer Service:** `${{ inputs.customer_service_image }}`
+            - **Claims Service:** `${{ inputs.claims_service_image }}`
+            - **Payments Service:** `${{ inputs.payments_service_image }}`
+            - **Insurance UI:** `${{ inputs.insurance_ui_image }}`
+
+            ### Deployment Details
+            - Environment: `${{ inputs.environment_name }}`
+            - Organization: `${{ steps.org.outputs.name }}`
+            - Deployment successful ✓
