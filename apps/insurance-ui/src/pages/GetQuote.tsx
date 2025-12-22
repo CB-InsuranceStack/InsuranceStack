@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { DollarSign, Car, Home, Heart, Activity, Shield, CheckCircle } from 'lucide-react';
+import { DollarSign, Car, Home, Heart, Shield, CheckCircle } from 'lucide-react';
 import AlertBanner from '../components/AlertBanner';
 import { api } from '../services/api';
 
@@ -48,13 +48,6 @@ export default function GetQuote() {
       icon: Heart,
       description: 'Secure your family\'s financial future',
       color: 'bg-purple-100 text-purple-600',
-    },
-    {
-      id: 'health',
-      name: 'Health Insurance',
-      icon: Activity,
-      description: 'Comprehensive healthcare coverage',
-      color: 'bg-red-100 text-red-600',
     },
   ];
 
