@@ -4,9 +4,10 @@ import { format } from 'date-fns';
 
 interface PolicyCardProps {
   policy: Policy;
+  onViewDetails?: () => void;
 }
 
-export default function PolicyCard({ policy }: PolicyCardProps) {
+export default function PolicyCard({ policy, onViewDetails }: PolicyCardProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -119,7 +120,13 @@ export default function PolicyCard({ policy }: PolicyCardProps) {
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <button className="w-full btn-secondary text-sm">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails?.();
+          }}
+          className="w-full btn-secondary text-sm"
+        >
           View Details
         </button>
       </div>

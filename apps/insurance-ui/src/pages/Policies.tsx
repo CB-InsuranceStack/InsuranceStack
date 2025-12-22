@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Shield, TrendingUp, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import PolicyCard from '../components/PolicyCard';
+import PolicyDetailModal from '../components/PolicyDetailModal';
 import AlertBanner from '../components/AlertBanner';
 import type { Policy } from '../types';
 
 export default function Policies() {
+  const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null);
   // Fetch policies data
   const {
     data: policies,
@@ -152,7 +155,11 @@ export default function Policies() {
         {policies && policies.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {policies.map((policy) => (
-              <PolicyCard key={policy.id} policy={policy} />
+              <PolicyCard
+                key={policy.id}
+                policy={policy}
+                onViewDetails={() => setSelectedPolicy(policy)}
+              />
             ))}
           </div>
         ) : (
@@ -204,6 +211,14 @@ export default function Policies() {
           </button>
         </div>
       </div>
+
+      {/* Policy Detail Modal */}
+      {selectedPolicy && (
+        <PolicyDetailModal
+          policy={selectedPolicy}
+          onClose={() => setSelectedPolicy(null)}
+        />
+      )}
     </div>
   );
 }
