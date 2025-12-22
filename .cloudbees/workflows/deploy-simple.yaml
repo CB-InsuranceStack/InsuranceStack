@@ -176,7 +176,7 @@ jobs:
                 tag: ${{ steps.path.outputs.payments_service_tag }}
                 pullPolicy: Always
 
-            insuranceUi:
+            insuranceUI:
               enabled: true
               replicaCount: 1
               image:
