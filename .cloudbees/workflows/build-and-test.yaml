@@ -1,8 +1,6 @@
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
-
 name: Build and Test
-
 on:
   push:
     branches:
@@ -11,7 +9,7 @@ on:
   pull_request:
     branches:
       - main
-
+  workflow_dispatch:
 jobs:
   build-pricing-engine:
     outputs:
@@ -19,7 +17,6 @@ jobs:
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
-
       - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
@@ -37,20 +34,17 @@ jobs:
           else
             echo "No tests found, skipping JUnit report generation"
           fi
-
       - name: Publish Pricing Engine test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/pricing-engine
-
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
-
       - name: Build Docker image
         kind: build
         id: kaniko-pricing
@@ -61,7 +55,6 @@ jobs:
           destination: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
-
       - name: Parse Pricing Engine artifact ID
         id: parse-pricing-artifact
         uses: docker://alpine:3.20
@@ -90,14 +83,12 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Pricing Engine artifact ID: $ART_ID"
-
   build-policy-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-policy-artifact.outputs.id }}
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
-
       - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
@@ -114,20 +105,17 @@ jobs:
           else
             echo "No tests found, skipping JUnit report generation"
           fi
-
       - name: Publish Policy Service test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/policy-service
-
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
-
       - name: Build Docker image
         kind: build
         id: kaniko-policy
@@ -138,7 +126,6 @@ jobs:
           destination: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
-
       - name: Parse Policy Service artifact ID
         id: parse-policy-artifact
         uses: docker://alpine:3.20
@@ -167,14 +154,12 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Policy Service artifact ID: $ART_ID"
-
   build-customer-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-customer-artifact.outputs.id }}
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
-
       - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
@@ -192,20 +177,17 @@ jobs:
           else
             echo "No tests found, skipping JUnit report generation"
           fi
-
       - name: Publish Customer Service test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/customer-service
-
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
-
       - name: Build Docker image
         kind: build
         id: kaniko-customer
@@ -216,7 +198,6 @@ jobs:
           destination: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
-
       - name: Parse Customer Service artifact ID
         id: parse-customer-artifact
         uses: docker://alpine:3.20
@@ -245,14 +226,12 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Customer Service artifact ID: $ART_ID"
-
   build-claims-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-claims-artifact.outputs.id }}
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
-
       - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
@@ -270,20 +249,17 @@ jobs:
           else
             echo "No tests found, skipping JUnit report generation"
           fi
-
       - name: Publish Claims Service test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/claims-service
-
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
-
       - name: Build Docker image
         kind: build
         id: kaniko-claims
@@ -294,7 +270,6 @@ jobs:
           destination: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
-
       - name: Parse Claims Service artifact ID
         id: parse-claims-artifact
         uses: docker://alpine:3.20
@@ -323,14 +298,12 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Claims Service artifact ID: $ART_ID"
-
   build-payments-service:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-payments-artifact.outputs.id }}
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
-
       - name: Run tests
         kind: test
         uses: docker://golang:1.21-alpine
@@ -348,20 +321,17 @@ jobs:
           else
             echo "No tests found, skipping JUnit report generation"
           fi
-
       - name: Publish Payments Service test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: go
           folder-name: ${{ cloudbees.workspace }}/apps/payments-service
-
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
-
       - name: Build Docker image
         kind: build
         id: kaniko-payments
@@ -372,7 +342,6 @@ jobs:
           destination: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
-
       - name: Parse Payments Service artifact ID
         id: parse-payments-artifact
         uses: docker://alpine:3.20
@@ -401,14 +370,12 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Payments Service artifact ID: $ART_ID"
-
   build-insurance-ui:
     outputs:
       ARTIFACT_ID: ${{ steps.parse-ui-artifact.outputs.id }}
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
-
       - name: Install dependencies and run tests
         kind: test
         uses: docker://node:20-alpine
@@ -428,20 +395,17 @@ jobs:
 
           echo "Building application..."
           npm run build
-
       - name: Publish UI test results
         uses: cloudbees-io/publish-test-results@v1
         with:
           test-type: junit
           folder-name: ${{ cloudbees.workspace }}/apps/insurance-ui
-
       - name: Configure Docker credentials
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
           username: ${{ vars.IStack_docker_user }}
           password: ${{ secrets.IStack_docker_token }}
-
       - name: Calculate BASE_PATH for UI
         id: basepath
         uses: docker://alpine:3.20
@@ -477,7 +441,6 @@ jobs:
           BASE_PATH="/${ORG}/${ENV_NAME}"
           printf '%s' "$BASE_PATH" > "$CLOUDBEES_OUTPUTS/value"
           echo "Base path: $BASE_PATH"
-
       - name: Build Docker image
         kind: build
         id: kaniko-ui
@@ -489,7 +452,6 @@ jobs:
           build-args: BASE_PATH=${{ steps.basepath.outputs.value }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
-
       - name: Parse Insurance UI artifact ID
         id: parse-ui-artifact
         uses: docker://alpine:3.20
@@ -518,12 +480,17 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Insurance UI artifact ID: $ART_ID"
-
   deploy-dev:
     if: ${{ cloudbees.scm.branch == 'main' }}
     environment: insurance-stack-dev
     uses: ./.cloudbees/workflows/deploy-simple.yaml
-    needs: [build-pricing-engine, build-policy-service, build-customer-service, build-claims-service, build-payments-service, build-insurance-ui]
+    needs:
+      - build-pricing-engine
+      - build-policy-service
+      - build-customer-service
+      - build-claims-service
+      - build-payments-service
+      - build-insurance-ui
     with:
       pricing_engine_image: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
       policy_service_image: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
