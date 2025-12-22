@@ -121,9 +121,9 @@ export default function GetQuote() {
       // Show success message
       setSubmitSuccess(true);
 
-      // Small delay to show success message, then reload to policies page
+      // Small delay to show success message, then navigate to policies page
       setTimeout(() => {
-        window.location.href = '/policies';
+        navigate('/policies');
       }, 800);
     } catch (error) {
       console.error('Failed to create policy:', error);
