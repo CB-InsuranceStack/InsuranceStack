@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { DollarSign, Car, Home, Heart, Activity, Shield, CheckCircle } from 'lucide-react';
 import AlertBanner from '../components/AlertBanner';
 import { api } from '../services/api';
 
 export default function GetQuote() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [policyType, setPolicyType] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -115,6 +117,9 @@ export default function GetQuote() {
       };
 
       await api.createPolicy(policyData);
+
+      // Invalidate policies cache so the list refreshes automatically
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
 
       // Show success message
       setSubmitSuccess(true);
