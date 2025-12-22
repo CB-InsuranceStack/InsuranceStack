@@ -41,6 +41,7 @@ function App() {
                   <Layout>
                     <Routes>
                       <Route path="/" element={<Policies />} />
+                      <Route path="/policies" element={<Policies />} />
                       <Route path="/claims" element={<Claims />} />
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/payments" element={<Payments />} />
