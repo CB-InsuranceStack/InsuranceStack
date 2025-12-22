@@ -4,7 +4,54 @@ kind: workflow
 name: InsuranceStack - Deploy with Governance
 
 on:
-  workflow_dispatch
+  workflow_call:
+    inputs:
+      pricing_engine_image:
+        type: string
+        required: true
+      policy_service_image:
+        type: string
+        required: true
+      customer_service_image:
+        type: string
+        required: true
+      claims_service_image:
+        type: string
+        required: true
+      payments_service_image:
+        type: string
+        required: true
+      insurance_ui_image:
+        type: string
+        required: true
+      pricing_engine_artifact_id:
+        type: string
+        required: true
+      policy_service_artifact_id:
+        type: string
+        required: true
+      customer_service_artifact_id:
+        type: string
+        required: true
+      claims_service_artifact_id:
+        type: string
+        required: true
+      payments_service_artifact_id:
+        type: string
+        required: true
+      ui_artifact_id:
+        type: string
+        required: true
+      environment_name:
+        type: string
+        required: true
+      commit_sha:
+        type: string
+        required: true
+      repository:
+        type: string
+        required: true
+  workflow_dispatch:
 
 jobs:
   # FAST-PATH: pricing-engine - No approval required

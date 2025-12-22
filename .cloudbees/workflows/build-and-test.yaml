@@ -103,6 +103,8 @@ jobs:
             risk-level=medium
 
   build-customer-service:
+    outputs:
+      ARTIFACT_ID: ${{ steps.parse-customer-artifact.outputs.id }}
     steps:
       - name: Checkout
         uses: cloudbees-io/checkout@v1
@@ -126,6 +128,7 @@ jobs:
 
       - name: Build Docker image - Customer Service
         kind: build
+        id: kaniko-customer
         uses: cloudbees-io/kaniko@v1
         with:
           context: apps/customer-service
@@ -134,6 +137,35 @@ jobs:
             org.opencontainers.image.source=${{ cloudbees.scm.url }}
             governance-tier=standard
             risk-level=medium
+
+      - name: Parse Customer Service artifact ID
+        id: parse-customer-artifact
+        uses: docker://alpine:3.20
+        shell: sh
+        env:
+          IDS: ${{ steps.kaniko-customer.outputs.artifact-ids }}
+        run: |
+          set -eu
+          ART_ID=""
+          if printf '%s' "$IDS" | grep -q '^map\['; then
+            S=$(printf '%s' "$IDS" | sed -e 's/^map\[//' -e 's/\]$//')
+            FIRST=$(printf '%s' "$S" | awk '{print $1}')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          elif printf '%s' "$IDS" | grep -q '^{.*}$'; then
+            S=$(printf '%s' "$IDS" | tr -d '{}"')
+            FIRST=$(printf '%s' "$S" | tr ',' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          else
+            FIRST=$(printf '%s' "$IDS" | tr ', ' '\n' | sed -n '1p')
+            ART_ID=$(printf '%s' "$FIRST" | awk -F: '{print $NF}')
+          fi
+          ART_ID=$(printf '%s' "$ART_ID" | tr -d ' \t\r\n')
+          case "$ART_ID" in
+            ????????-????-????-????-????????????) : ;;
+            *) echo "Parsed artifact-id does not look like a UUID: '$ART_ID'" >&2; exit 1;;
+          esac
+          printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
+          echo "Customer Service artifact ID: $ART_ID"
 
   # ============================================================================
   # GOVERNED SERVICES: claims-service, payments-service
@@ -337,3 +369,37 @@ jobs:
           echo "========================================"
           echo "Next: Deploy workflow will handle governance-based deployment"
           echo "========================================"
+
+  # ============================================================================
+  # DEPLOY TO DEV
+  # Automatically deploy to dev environment on main branch
+  # ============================================================================
+
+  deploy-dev:
+    if: ${{ cloudbees.scm.branch == 'main' }}
+    environment: insurance-stack-dev
+    uses: ./.cloudbees/workflows/deploy-simple.yaml
+    needs:
+      - build-pricing-engine
+      - build-policy-service
+      - build-customer-service
+      - build-claims-service
+      - build-payments-service
+      - build-insurance-ui
+    with:
+      pricing_engine_image: cbinsurancestack/pricing-engine:${{ cloudbees.scm.sha }}
+      policy_service_image: cbinsurancestack/policy-service:${{ cloudbees.scm.sha }}
+      customer_service_image: cbinsurancestack/customer-service:${{ cloudbees.scm.sha }}
+      claims_service_image: cbinsurancestack/claims-service:${{ cloudbees.scm.sha }}
+      payments_service_image: cbinsurancestack/payments-service:${{ cloudbees.scm.sha }}
+      insurance_ui_image: cbinsurancestack/insurance-ui:${{ cloudbees.scm.sha }}
+      pricing_engine_artifact_id: ${{ needs.build-pricing-engine.outputs.ARTIFACT_ID }}
+      policy_service_artifact_id: ${{ needs.build-policy-service.outputs.ARTIFACT_ID }}
+      customer_service_artifact_id: ${{ needs.build-customer-service.outputs.ARTIFACT_ID }}
+      claims_service_artifact_id: ${{ needs.build-claims-service.outputs.ARTIFACT_ID }}
+      payments_service_artifact_id: ${{ needs.build-payments-service.outputs.ARTIFACT_ID }}
+      ui_artifact_id: ${{ needs.build-insurance-ui.outputs.ARTIFACT_ID }}
+      environment_name: insurance-stack-dev
+      repository: ${{ cloudbees.scm.repository }}
+      commit_sha: ${{ cloudbees.scm.sha }}
+    secrets: inherit
