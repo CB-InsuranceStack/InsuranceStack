@@ -5,9 +5,12 @@ import AlertBanner from '../components/AlertBanner';
 import ClaimList from '../components/ClaimList';
 import type { Claim, Policy } from '../types';
 import { useState } from 'react';
+import useRoxFlag from '../hooks/useRoxFlag';
 
 export default function Claims() {
   const queryClient = useQueryClient();
+  const claimsFilters = useRoxFlag('claimsFilters');
+  const quickClaimFiling = useRoxFlag('quickClaimFiling');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFileClaimModal, setShowFileClaimModal] = useState(false);
@@ -145,9 +148,11 @@ export default function Claims() {
           <h1 className="text-3xl font-bold text-gray-900">Claims</h1>
           <p className="text-gray-600 mt-1">Track and manage your insurance claims.</p>
         </div>
-        <button onClick={() => setShowFileClaimModal(true)} className="btn-primary">
-          File New Claim
-        </button>
+        {quickClaimFiling && (
+          <button onClick={() => setShowFileClaimModal(true)} className="btn-primary">
+            File New Claim
+          </button>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -210,37 +215,39 @@ export default function Claims() {
       </div>
 
       {/* Filters */}
-      <div className="card p-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search claims by number, type, or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-10 w-full"
-            />
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="input min-w-[150px]"
-              >
-                <option value="">All Status</option>
-                <option value="submitted">Submitted</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="denied">Denied</option>
-                <option value="paid">Paid</option>
-              </select>
+      {claimsFilters && (
+        <div className="card p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search claims by number, type, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input pl-10 w-full"
+              />
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Filter className="w-5 h-5 text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="input min-w-[150px]"
+                >
+                  <option value="">All Status</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="under_review">Under Review</option>
+                  <option value="approved">Approved</option>
+                  <option value="denied">Denied</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Claims List */}
       <div className="card">

@@ -5,9 +5,11 @@ import AlertBanner from '../components/AlertBanner';
 import type { Payment, Policy } from '../types';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import useRoxFlag from '../hooks/useRoxFlag';
 
 export default function Payments() {
   const queryClient = useQueryClient();
+  const paymentsFilters = useRoxFlag('paymentsFilters');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showMakePaymentModal, setShowMakePaymentModal] = useState(false);
@@ -260,32 +262,34 @@ export default function Payments() {
       </div>
 
       {/* Filters */}
-      <div className="card p-6">
-        <div className="flex items-center space-x-4">
-          <Filter className="w-5 h-5 text-gray-400" />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="input min-w-[150px]"
-          >
-            <option value="">All Types</option>
-            <option value="premium">Premium</option>
-            <option value="claim">Claim</option>
-            <option value="refund">Refund</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input min-w-[150px]"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
+      {paymentsFilters && (
+        <div className="card p-6">
+          <div className="flex items-center space-x-4">
+            <Filter className="w-5 h-5 text-gray-400" />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="input min-w-[150px]"
+            >
+              <option value="">All Types</option>
+              <option value="premium">Premium</option>
+              <option value="claim">Claim</option>
+              <option value="refund">Refund</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input min-w-[150px]"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Payments List */}
       <div className="card">

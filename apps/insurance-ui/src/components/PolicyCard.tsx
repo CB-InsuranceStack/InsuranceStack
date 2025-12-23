@@ -1,6 +1,7 @@
 import { Shield, Car, Home, Heart, Activity, Calendar } from 'lucide-react';
 import type { Policy } from '../types';
 import { format } from 'date-fns';
+import useRoxFlag from '../hooks/useRoxFlag';
 
 interface PolicyCardProps {
   policy: Policy;
@@ -8,6 +9,7 @@ interface PolicyCardProps {
 }
 
 export default function PolicyCard({ policy, onViewDetails }: PolicyCardProps) {
+  const enhancedPolicyView = useRoxFlag('enhancedPolicyView');
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -106,6 +108,33 @@ export default function PolicyCard({ policy, onViewDetails }: PolicyCardProps) {
                 {formatCurrency(policy.deductible)}
               </span>
             </div>
+          )}
+
+          {enhancedPolicyView && (
+            <>
+              {policy.renewalDate && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Renewal Date</span>
+                  <span className="font-semibold text-gray-900">
+                    {format(new Date(policy.renewalDate), 'MMM dd, yyyy')}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Customer ID</span>
+                <span className="font-mono text-xs text-gray-900">
+                  {policy.customerId.slice(0, 8)}...
+                </span>
+              </div>
+              {policy.currency && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Currency</span>
+                  <span className="font-semibold text-gray-900">
+                    {policy.currency}
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
