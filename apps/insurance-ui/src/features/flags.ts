@@ -33,17 +33,6 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
   // Register the feature flags container
   Rox.register('insurancestack', flags);
 
-  // Configure polling for real-time updates (dev/demo mode)
-  // In production, you might want a longer interval (60s+) to reduce API calls
-  if (import.meta.env.DEV) {
-    // 2 second polling for instant flag updates during development
-    (Rox as any).setOptions({ fetchIntervalInSeconds: 2 });
-    console.log('[FeatureFlags] Dev mode: Polling every 2 seconds for instant flag updates');
-  } else {
-    // 10 second polling for production demos (balance between real-time and API load)
-    (Rox as any).setOptions({ fetchIntervalInSeconds: 10 });
-  }
-
   // Setup Rox with configuration
   const roxConfig: RoxSetupOptions = {
     // Note: debugLevel removed for security - prevents API key from being logged to console
