@@ -60,7 +60,11 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
     // Use base URL to handle path-based deployments correctly
     if (!apiKey) {
       try {
-        const configPath = `${import.meta.env.BASE_URL}config/fm.json`.replace(/\/\//g, '/');
+        // Ensure proper path construction with BASE_URL (may or may not have trailing slash)
+        const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+          ? import.meta.env.BASE_URL
+          : `${import.meta.env.BASE_URL}/`;
+        const configPath = `${baseUrl}config/fm.json`;
         console.log('[FeatureFlags] Fetching FM config from:', configPath);
         const response = await fetch(configPath);
         if (response.ok) {
