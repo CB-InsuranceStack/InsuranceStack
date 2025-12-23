@@ -34,6 +34,9 @@ interface RoxConfig {
   devModeSecret?: string;
 }
 
+// Track if this is the first configuration fetch
+let isFirstFetch = true;
+
 // Initialize Rox with the feature flags
 export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<void> {
   // Register the feature flags container
@@ -47,10 +50,11 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
         hasChanges: fetcherResults.hasChanges,
         source: fetcherResults.fetcherStatus,
       });
-      // Only update snapshot when configuration actually changes to prevent unnecessary re-renders
-      if (fetcherResults.hasChanges) {
+      // Always update snapshot on first fetch, then only when configuration changes
+      if (isFirstFetch || fetcherResults.hasChanges) {
         console.log('[FeatureFlags] Flags changed! Updating snapshot...');
         setFlagsSnapshot('fetched');
+        isFirstFetch = false;
       } else {
         console.log('[FeatureFlags] No flag changes detected');
       }
@@ -97,8 +101,7 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
       await Rox.setup('', roxConfig);
     }
 
-    // Initialize snapshot after setup
-    setFlagsSnapshot('initialized');
+    // Snapshot already updated by configurationFetchedHandler on first fetch
 
     // Expose manual fetch function for testing/demos (dev mode only)
     if (import.meta.env.DEV) {
@@ -112,8 +115,11 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
   } catch (error) {
     console.error('[FeatureFlags] Failed to initialize CloudBees FM:', error);
     // Continue with default values if setup fails
-    // Initialize snapshot even if setup fails
-    setFlagsSnapshot('error');
+    // Only initialize snapshot if it wasn't already done by configurationFetchedHandler
+    if (isFirstFetch) {
+      setFlagsSnapshot('error');
+      isFirstFetch = false;
+    }
   }
 }
 

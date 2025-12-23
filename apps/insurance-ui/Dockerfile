@@ -17,9 +17,12 @@ WORKDIR /app
 
 # Accept build arguments
 ARG BASE_PATH=/
+ARG VITE_ROX_API_KEY
 ARG NGINX_CONFIG=nginx.conf
 ENV BASE_PATH=${BASE_PATH}
 ENV NGINX_CONFIG=${NGINX_CONFIG}
+# Pass FM key to Vite build (optional - app works without it)
+ENV VITE_ROX_API_KEY=${VITE_ROX_API_KEY}
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
