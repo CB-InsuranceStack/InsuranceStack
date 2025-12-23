@@ -6,10 +6,10 @@ import AlertBanner from '../AlertBanner';
 vi.mock('../../features/flags', () => ({
   getFlagsSnapshot: () => ({
     alertsBanner: true,
-    dashboardCardsV2: true,
-    insightsV2: false,
-    transactionsFilters: true,
-    killInsights: false,
+    claimsFilters: true,
+    paymentsFilters: true,
+    enhancedPolicyView: false,
+    quickClaimFiling: true,
   }),
   subscribeFlags: () => () => {}, // Return unsubscribe function
 }));

@@ -3,20 +3,20 @@ import Rox, { type FetcherResults, type RoxSetupOptions } from 'rox-browser';
 
 // Define feature flags with default values
 export class FeatureFlags {
-  // UI Dashboard Cards V2 - Enhanced card design with better visuals
-  public dashboardCardsV2 = new Rox.Flag(true);
-
-  // UI Insights V2 - New insights panel with improved analytics
-  public insightsV2 = new Rox.Flag(false);
-
-  // UI Alerts Banner - Top banner for important alerts
+  // UI Alerts Banner - Top banner for important alerts and notifications
   public alertsBanner = new Rox.Flag(true);
 
-  // UI Transactions Filters - Advanced filtering for transactions
-  public transactionsFilters = new Rox.Flag(true);
+  // UI Claims Filters - Advanced filtering for claims list
+  public claimsFilters = new Rox.Flag(true);
 
-  // Kill switch for insights feature
-  public killInsights = new Rox.Flag(false);
+  // UI Payments Filters - Advanced filtering for payments list
+  public paymentsFilters = new Rox.Flag(true);
+
+  // Enhanced Policy View - Enhanced policy detail modal with additional information
+  public enhancedPolicyView = new Rox.Flag(false);
+
+  // Quick Claim Filing - Streamlined claim filing process
+  public quickClaimFiling = new Rox.Flag(true);
 }
 
 // Create feature flags instance
@@ -91,24 +91,24 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
 }
 
 // Helper functions to check flag values
-export function isDashboardCardsV2Enabled(): boolean {
-  return flags.dashboardCardsV2.isEnabled();
-}
-
-export function isInsightsV2Enabled(): boolean {
-  return flags.insightsV2.isEnabled() && !flags.killInsights.isEnabled();
-}
-
 export function isAlertsBannerEnabled(): boolean {
   return flags.alertsBanner.isEnabled();
 }
 
-export function isTransactionsFiltersEnabled(): boolean {
-  return flags.transactionsFilters.isEnabled();
+export function isClaimsFiltersEnabled(): boolean {
+  return flags.claimsFilters.isEnabled();
 }
 
-export function isInsightsKilled(): boolean {
-  return flags.killInsights.isEnabled();
+export function isPaymentsFiltersEnabled(): boolean {
+  return flags.paymentsFilters.isEnabled();
+}
+
+export function isEnhancedPolicyViewEnabled(): boolean {
+  return flags.enhancedPolicyView.isEnabled();
+}
+
+export function isQuickClaimFilingEnabled(): boolean {
+  return flags.quickClaimFiling.isEnabled();
 }
 
 // Reactive feature flags pattern (inspired by squid-ui)
@@ -121,11 +121,11 @@ const listeners = new Set<(reason: string, snapshot: Record<string, boolean>) =>
 // Build snapshot by evaluating all flags once
 function buildSnapshot(): Record<string, boolean> {
   return {
-    dashboardCardsV2: flags.dashboardCardsV2.isEnabled(),
-    insightsV2: flags.insightsV2.isEnabled() && !flags.killInsights.isEnabled(),
     alertsBanner: flags.alertsBanner.isEnabled(),
-    transactionsFilters: flags.transactionsFilters.isEnabled(),
-    killInsights: flags.killInsights.isEnabled(),
+    claimsFilters: flags.claimsFilters.isEnabled(),
+    paymentsFilters: flags.paymentsFilters.isEnabled(),
+    enhancedPolicyView: flags.enhancedPolicyView.isEnabled(),
+    quickClaimFiling: flags.quickClaimFiling.isEnabled(),
   };
 }
 
@@ -160,10 +160,10 @@ export function subscribeFlags(
 // Hook for React components to use feature flags
 export function useFeatureFlags() {
   return {
-    dashboardCardsV2: isDashboardCardsV2Enabled(),
-    insightsV2: isInsightsV2Enabled(),
     alertsBanner: isAlertsBannerEnabled(),
-    transactionsFilters: isTransactionsFiltersEnabled(),
-    killInsights: isInsightsKilled(),
+    claimsFilters: isClaimsFiltersEnabled(),
+    paymentsFilters: isPaymentsFiltersEnabled(),
+    enhancedPolicyView: isEnhancedPolicyViewEnabled(),
+    quickClaimFiling: isQuickClaimFilingEnabled(),
   };
 }
