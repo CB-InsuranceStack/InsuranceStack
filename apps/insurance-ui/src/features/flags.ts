@@ -15,8 +15,14 @@ export class FeatureFlags {
   // Enhanced Policy View - Enhanced policy detail modal with additional information
   public enhancedPolicyView = new Rox.Flag(false);
 
-  // Quick Claim Filing - Streamlined claim filing process
-  public quickClaimFiling = new Rox.Flag(true);
+  // Enable Claim Filing - Enable/disable claim filing functionality
+  public enableClaimFiling = new Rox.Flag(true);
+
+  // Kill switch for Get Quote feature (maintenance mode)
+  public killGetQuote = new Rox.Flag(false);
+
+  // Debug Mode - Enable verbose console logging and API debug logs
+  public debugMode = new Rox.Flag(false);
 }
 
 // Create feature flags instance
@@ -128,8 +134,23 @@ export function isEnhancedPolicyViewEnabled(): boolean {
   return flags.enhancedPolicyView.isEnabled();
 }
 
-export function isQuickClaimFilingEnabled(): boolean {
-  return flags.quickClaimFiling.isEnabled();
+export function isClaimFilingEnabled(): boolean {
+  return flags.enableClaimFiling.isEnabled();
+}
+
+export function isGetQuoteDisabled(): boolean {
+  return flags.killGetQuote.isEnabled();
+}
+
+export function isDebugModeEnabled(): boolean {
+  return flags.debugMode.isEnabled();
+}
+
+// Debug logging helper - only logs when debugMode flag is enabled
+export function debugLog(...args: any[]): void {
+  if (flags.debugMode.isEnabled()) {
+    console.log('[DEBUG]', ...args);
+  }
 }
 
 // Reactive feature flags pattern (inspired by squid-ui)
@@ -146,7 +167,9 @@ function buildSnapshot(): Record<string, boolean> {
     claimsFilters: flags.claimsFilters.isEnabled(),
     paymentsFilters: flags.paymentsFilters.isEnabled(),
     enhancedPolicyView: flags.enhancedPolicyView.isEnabled(),
-    quickClaimFiling: flags.quickClaimFiling.isEnabled(),
+    enableClaimFiling: flags.enableClaimFiling.isEnabled(),
+    killGetQuote: flags.killGetQuote.isEnabled(),
+    debugMode: flags.debugMode.isEnabled(),
   };
 }
 
@@ -185,6 +208,8 @@ export function useFeatureFlags() {
     claimsFilters: isClaimsFiltersEnabled(),
     paymentsFilters: isPaymentsFiltersEnabled(),
     enhancedPolicyView: isEnhancedPolicyViewEnabled(),
-    quickClaimFiling: isQuickClaimFilingEnabled(),
+    enableClaimFiling: isClaimFilingEnabled(),
+    killGetQuote: isGetQuoteDisabled(),
+    debugMode: isDebugModeEnabled(),
   };
 }

@@ -8,6 +8,7 @@ import type {
   Payment,
   Quote,
 } from '../types';
+import { isDebugModeEnabled } from '../features/flags';
 
 // Create axios instance with base configuration
 const apiClient: AxiosInstance = axios.create({
@@ -26,6 +27,17 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Debug logging for requests
+    if (isDebugModeEnabled()) {
+      console.log('[DEBUG] API Request:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        params: config.params,
+        data: config.data,
+      });
+    }
+
     return config;
   },
   (error) => {
@@ -35,7 +47,17 @@ apiClient.interceptors.request.use(
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Debug logging for successful responses
+    if (isDebugModeEnabled()) {
+      console.log('[DEBUG] API Response:', {
+        status: response.status,
+        url: response.config.url,
+        data: response.data,
+      });
+    }
+    return response;
+  },
   (error: AxiosError) => {
     if (error.response) {
       // Server responded with error status

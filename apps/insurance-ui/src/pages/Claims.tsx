@@ -10,7 +10,7 @@ import useRoxFlag from '../hooks/useRoxFlag';
 export default function Claims() {
   const queryClient = useQueryClient();
   const claimsFilters = useRoxFlag('claimsFilters');
-  const quickClaimFiling = useRoxFlag('quickClaimFiling');
+  const enableClaimFiling = useRoxFlag('enableClaimFiling');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFileClaimModal, setShowFileClaimModal] = useState(false);
@@ -148,7 +148,7 @@ export default function Claims() {
           <h1 className="text-3xl font-bold text-gray-900">Claims</h1>
           <p className="text-gray-600 mt-1">Track and manage your insurance claims.</p>
         </div>
-        {quickClaimFiling && (
+        {enableClaimFiling && (
           <button onClick={() => setShowFileClaimModal(true)} className="btn-primary">
             File New Claim
           </button>

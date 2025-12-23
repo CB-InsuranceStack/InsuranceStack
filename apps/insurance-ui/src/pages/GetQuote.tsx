@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Car, Home, Heart, Shield, CheckCircle } from 'lucide-react';
 import AlertBanner from '../components/AlertBanner';
 import { api } from '../services/api';
+import useRoxFlag from '../hooks/useRoxFlag';
 
 export default function GetQuote() {
   const navigate = useNavigate();
+  const killGetQuote = useRoxFlag('killGetQuote');
   const [step, setStep] = useState(1);
   const [policyType, setPolicyType] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -123,6 +125,53 @@ export default function GetQuote() {
       setIsSubmitting(false);
     }
   };
+
+  // If killGetQuote flag is enabled, show maintenance message
+  if (killGetQuote) {
+    return (
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Get a Quote</h1>
+          <p className="text-gray-600 mt-1">Find the perfect insurance coverage for your needs.</p>
+        </div>
+
+        {/* Maintenance Message */}
+        <AlertBanner
+          type="critical"
+          title="Temporarily Unavailable"
+          message="The Get a Quote feature is currently down for maintenance. Please check back later."
+          dismissible={false}
+        />
+
+        <div className="card p-12 text-center">
+          <div className="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-gray-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            Down for Maintenance
+          </h2>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            We're working hard to improve our quote system. In the meantime, you can still view your existing policies or contact our support team for assistance.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => navigate('/policies')}
+              className="btn-primary"
+            >
+              View My Policies
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="btn-secondary"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

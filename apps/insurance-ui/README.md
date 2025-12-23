@@ -38,8 +38,10 @@ The application uses **CloudBees Feature Management** with **fully reactive, rea
 | `alertsBanner` | `true` | Top banner for displaying important alerts and notifications |
 | `claimsFilters` | `true` | Advanced filtering for claims list |
 | `paymentsFilters` | `true` | Advanced filtering for payments list |
-| `enhancedPolicyView` | `false` | Enhanced policy detail modal with additional information |
-| `quickClaimFiling` | `true` | Streamlined claim filing process |
+| `enhancedPolicyView` | `false` | Enhanced policy detail modal with additional information (renewal date, customer ID, currency) |
+| `enableClaimFiling` | `true` | Enable/disable claim filing functionality (shows/hides "File New Claim" button) |
+| `killGetQuote` | `false` | Kill switch for Get Quote feature - displays maintenance message when enabled |
+| `debugMode` | `false` | Enable verbose console logging and API debug logs for troubleshooting |
 
 ### Reactive Pattern
 
