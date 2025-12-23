@@ -34,7 +34,7 @@ cloudbees:
 featureFlags:
   enabled: true
   secretName: insurancestack-fm
-  secretKey: FM_KEY
+  secretKey: FM_TOKEN
   mountPath: /usr/share/nginx/html/config
   fileName: fm.json
   createSecret: true

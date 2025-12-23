@@ -81,7 +81,7 @@ spec:
         # Where fm.json is written by the initContainer and then mounted into the app
         - name: fm-config
           emptyDir: {}
-        # Secret providing the FM_KEY (string)
+        # Secret providing the FM_TOKEN (string)
         - name: fm-secret
           secret:
             secretName: {{ .Values.featureFlags.secretName }}

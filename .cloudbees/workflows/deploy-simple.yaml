@@ -137,13 +137,13 @@ jobs:
               environmentName: ${{ inputs.environment_name }}
 
             cloudbees:
-              fmKey: ${{ secrets.FM_KEY || 'local-mode' }}
+              fmKey: ${{ secrets.FM_TOKEN || 'local-mode' }}
               environment: production
 
             featureFlags:
               enabled: true
               createSecret: true
-              fmKey: ${{ secrets.FM_KEY || 'local-mode' }}
+              fmKey: ${{ secrets.FM_TOKEN || 'local-mode' }}
 
             pricingEngine:
               enabled: true
@@ -351,5 +351,5 @@ jobs:
             - Public ingress with SSL (cert-manager + LetsEncrypt)
             - Path-based routing: `${{ steps.path.outputs.prefix }}`
             - Deployment method: CloudBees Helm Install Action
-            - Feature Management Key: ${{ secrets.FM_KEY && '✓ from secret' || '✗ using local-mode' }}
+            - Feature Management Key: ${{ secrets.FM_TOKEN && '✓ from secret' || '✗ using local-mode' }}
             - Deployment successful ✓
