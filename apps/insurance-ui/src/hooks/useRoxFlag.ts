@@ -9,7 +9,7 @@ import { getFlagsSnapshot, subscribeFlags } from '../features/flags';
  * @returns Current boolean value of the flag
  *
  * @example
- * const isEnabled = useRoxFlag('transactionsFilters');
+ * const isEnabled = useRoxFlag('claimsFilters');
  */
 export default function useRoxFlag(key: string): boolean {
   const [val, setVal] = useState(() => !!getFlagsSnapshot()[key]);

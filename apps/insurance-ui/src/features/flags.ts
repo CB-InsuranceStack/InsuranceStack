@@ -41,8 +41,10 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
         hasChanges: fetcherResults.hasChanges,
         source: fetcherResults.fetcherStatus,
       });
-      // Update snapshot when configuration changes (reactive pattern)
-      setFlagsSnapshot('fetched');
+      // Only update snapshot when configuration actually changes to prevent unnecessary re-renders
+      if (fetcherResults.hasChanges) {
+        setFlagsSnapshot('fetched');
+      }
     },
   };
 

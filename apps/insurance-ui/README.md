@@ -35,11 +35,11 @@ The application uses **CloudBees Feature Management** with **fully reactive, rea
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `policiesCardsV2` | `true` | Enhanced policy card design with gradients and better visuals |
-| `claimsFiltersV2` | `false` | Advanced filtering options for claims |
-| `alertsBanner` | `true` | Top banner for displaying important alerts and announcements |
-| `quoteWizard` | `true` | Multi-step quote generation wizard |
-| `killCustomers` | `false` | Kill switch to disable the customer management feature |
+| `alertsBanner` | `true` | Top banner for displaying important alerts and notifications |
+| `claimsFilters` | `true` | Advanced filtering for claims list |
+| `paymentsFilters` | `true` | Advanced filtering for payments list |
+| `enhancedPolicyView` | `false` | Enhanced policy detail modal with additional information |
+| `quickClaimFiling` | `true` | Streamlined claim filing process |
 
 ### Reactive Pattern
 
