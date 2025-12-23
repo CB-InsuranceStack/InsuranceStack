@@ -12,13 +12,25 @@ import { getFlagsSnapshot, subscribeFlags } from '../features/flags';
  * const isEnabled = useRoxFlag('claimsFilters');
  */
 export default function useRoxFlag(key: string): boolean {
-  const [val, setVal] = useState(() => !!getFlagsSnapshot()[key]);
+  const [val, setVal] = useState(() => {
+    const snapshot = getFlagsSnapshot();
+    const initialVal = !!snapshot[key];
+    console.log(`[useRoxFlag] Initial value for '${key}':`, initialVal, 'snapshot:', snapshot);
+    return initialVal;
+  });
 
   useEffect(() => {
-    return subscribeFlags((_reason, snap) => {
+    return subscribeFlags((reason, snap) => {
       const newVal = !!snap[key];
+      console.log(`[useRoxFlag] Flag '${key}' update (${reason}):`, newVal, 'snapshot:', snap);
       // Only update if the value actually changed to prevent unnecessary re-renders
-      setVal((prevVal) => (prevVal !== newVal ? newVal : prevVal));
+      setVal((prevVal) => {
+        if (prevVal !== newVal) {
+          console.log(`[useRoxFlag] Flag '${key}' changed from ${prevVal} to ${newVal}`);
+          return newVal;
+        }
+        return prevVal;
+      });
     });
   }, [key]);
 

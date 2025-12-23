@@ -43,7 +43,10 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
       });
       // Only update snapshot when configuration actually changes to prevent unnecessary re-renders
       if (fetcherResults.hasChanges) {
+        console.log('[FeatureFlags] Flags changed! Updating snapshot...');
         setFlagsSnapshot('fetched');
+      } else {
+        console.log('[FeatureFlags] No flag changes detected');
       }
     },
   };
@@ -84,6 +87,16 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
 
     // Initialize snapshot after setup
     setFlagsSnapshot('initialized');
+
+    // Expose manual fetch function for testing/demos (dev mode only)
+    if (import.meta.env.DEV) {
+      (window as any).refreshFeatureFlags = async () => {
+        console.log('[FeatureFlags] Manually fetching latest configuration...');
+        await Rox.fetch();
+        console.log('[FeatureFlags] Manual fetch complete');
+      };
+      console.log('[FeatureFlags] Dev mode: Use window.refreshFeatureFlags() to manually fetch latest flags');
+    }
   } catch (error) {
     console.error('[FeatureFlags] Failed to initialize CloudBees FM:', error);
     // Continue with default values if setup fails
