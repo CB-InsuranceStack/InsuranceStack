@@ -57,10 +57,12 @@ export async function initializeFeatureFlags(config: RoxConfig = {}): Promise<vo
     let apiKey = config.apiKey || import.meta.env.VITE_ROX_API_KEY || '';
 
     // In production (deployed via Helm), fetch from runtime config
-    // Use relative path to respect Vite's base path
+    // Use base URL to handle path-based deployments correctly
     if (!apiKey) {
       try {
-        const response = await fetch('config/fm.json');
+        const configPath = `${import.meta.env.BASE_URL}config/fm.json`.replace(/\/\//g, '/');
+        console.log('[FeatureFlags] Fetching FM config from:', configPath);
+        const response = await fetch(configPath);
         if (response.ok) {
           const fmConfig = await response.json();
           apiKey = fmConfig.envKey || '';
