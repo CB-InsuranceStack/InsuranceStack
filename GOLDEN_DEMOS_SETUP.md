@@ -55,8 +55,8 @@ Both applications use:
 ### Phase 2: Mimic Scenario Creation
 - [x] Create `insurancestack-demo` scenario ✅
 - [ ] Create `accountstack-demo` scenario (deferred)
-- [ ] Test end-to-end deployment via Mimic
-- [ ] Document post-setup manual steps
+- [x] Test end-to-end deployment via Mimic ✅
+- [x] Document setup requirements ✅
 
 #### InsuranceStack Scenario Created (2025-12-23)
 - **Location**: `/Users/brown/Git_orgs/cb-demos/mimic/scenarios/insurancestack-demo.yaml`
@@ -67,6 +67,28 @@ Both applications use:
   - Parameters: `project_name`, `target_org`, `environment`
   - Creates: Repository fork, Component, Environment (with FM_TOKEN), Application
   - No file modifications needed - workflow handles all configuration dynamically
+
+#### Successful Test Run (2025-12-23)
+- **Run ID**: insurancestack-demo-02a1329e
+- **Target CloudBees Org**: Unify Golden Demos (817512df-9fed-417c-9e84-f829d0c33bae)
+- **Target GitHub Org**: cb-golden-demo-org
+- **Project Name**: insurancestack-stu-test-3
+- **Environment**: insurancestack-stu-test-3-dev
+
+**Resources Created:**
+- ✅ GitHub Repo: https://github.com/cb-golden-demo-org/insurancestack-stu-test-3
+- ✅ CloudBees Component: insurancestack-stu-test-3
+- ✅ CloudBees Environment: insurancestack-stu-test-3-dev (with FM_TOKEN)
+- ✅ CloudBees Application: insurancestack-stu-test-3-app
+
+**Issues Resolved During Testing:**
+1. **Template Repository**: CB-InsuranceStack/InsuranceStack needed to be marked as GitHub template
+2. **Application Creation Conflict**: Removed `repository:` field from applications section (was trying to auto-create duplicate component)
+3. **GitHub Org Configuration**: Golden demos org only has `cb-golden-demo-org` configured, not `CB-InsuranceStack`
+
+**Next Steps:**
+- Manually trigger `deploy-simple` workflow in the created repo
+- Application will deploy to: `https://insurancestack.se-main-demo.sa-demo.beescloud.com/cb-golden-demo-org/insurancestack-stu-test-3-dev`
 
 ### Phase 3: Documentation
 - [ ] Update Confluence pages with Mimic instructions
