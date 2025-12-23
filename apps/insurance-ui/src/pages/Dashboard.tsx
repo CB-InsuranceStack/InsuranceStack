@@ -1,48 +1,59 @@
 import { useQuery } from '@tanstack/react-query';
-import { Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Shield, FileText, DollarSign, AlertCircle, TrendingUp, Activity } from 'lucide-react';
 import { api } from '../services/api';
-import AccountCard from '../components/AccountCard';
+import PolicyCard from '../components/PolicyCard';
 import AlertBanner from '../components/AlertBanner';
-import type { Account } from '../types';
+import type { Policy, Claim, Payment } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  // Fetch accounts data
+  const navigate = useNavigate();
+
+  // Fetch policies data
   const {
-    data: accounts,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<Account[]>({
-    queryKey: ['accounts'],
-    queryFn: () => api.getAccounts(),
-    refetchInterval: 30000, // Refetch every 30 seconds
+    data: policies,
+    isLoading: policiesLoading,
+  } = useQuery<Policy[]>({
+    queryKey: ['policies'],
+    queryFn: () => api.getPolicies(),
+    refetchInterval: 30000,
+  });
+
+  // Fetch claims data
+  const {
+    data: claims,
+    isLoading: claimsLoading,
+  } = useQuery<Claim[]>({
+    queryKey: ['claims'],
+    queryFn: () => api.getClaims(),
+    refetchInterval: 30000,
+  });
+
+  // Fetch payments data
+  const {
+    isLoading: paymentsLoading,
+  } = useQuery<Payment[]>({
+    queryKey: ['payments'],
+    queryFn: () => api.getPayments(),
+    refetchInterval: 30000,
   });
 
   // Calculate summary statistics
-  const summary = accounts?.reduce(
-    (acc, account) => {
-      if (account.status === 'active') {
-        acc.totalBalance += account.balance;
-        acc.accountCount += 1;
-
-        if (account.accountType === 'checking' || account.accountType === 'savings') {
-          acc.liquidAssets += account.balance;
-        }
-      }
-      return acc;
-    },
-    { totalBalance: 0, accountCount: 0, liquidAssets: 0 }
-  );
-
-  // Get currency from user's accounts (all accounts have the same currency)
-  const userCurrency = accounts?.[0]?.currency || 'USD';
+  const summary = {
+    activePolicies: policies?.filter(p => p.status === 'active').length || 0,
+    totalCoverage: policies?.filter(p => p.status === 'active').reduce((sum, p) => sum + p.coverage, 0) || 0,
+    monthlyPremium: policies?.filter(p => p.status === 'active').reduce((sum, p) => sum + p.premium, 0) || 0,
+    activeClaims: claims?.filter(c => c.status === 'submitted' || c.status === 'under_review').length || 0,
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: userCurrency,
+      currency: 'USD',
     }).format(amount);
   };
+
+  const isLoading = policiesLoading || claimsLoading || paymentsLoading;
 
   // Loading state
   if (isLoading) {
@@ -51,31 +62,8 @@ export default function Dashboard() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="spinner border-brand-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your accounts...</p>
+            <p className="text-gray-600">Loading your dashboard...</p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <div className="space-y-6">
-        <AlertBanner
-          type="critical"
-          title="Error Loading Accounts"
-          message={error instanceof Error ? error.message : 'Failed to load account data. Please try again.'}
-          dismissible={false}
-        />
-        <div className="card p-8 text-center">
-          <p className="text-gray-600 mb-4">Unable to load your accounts</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-primary"
-          >
-            Retry
-          </button>
         </div>
       </div>
     );
@@ -86,29 +74,29 @@ export default function Dashboard() {
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome back! Here's your financial overview.</p>
+        <p className="text-gray-600 mt-1">Welcome back! Here's your insurance overview.</p>
       </div>
 
       {/* Alert Banner */}
       <AlertBanner
         type="info"
-        title="New Feature Available"
-        message="Check out the enhanced dashboard cards with improved visuals and insights!"
+        title="Policy Renewal Reminder"
+        message="Check your policies for upcoming renewals to ensure continuous coverage!"
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 font-medium">Total Balance</p>
+              <p className="text-sm text-gray-600 font-medium">Active Policies</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                {formatCurrency(summary?.totalBalance || 0)}
+                {summary.activePolicies}
               </p>
-              <p className="text-xs text-gray-500 mt-2">Across all accounts</p>
+              <p className="text-xs text-gray-500 mt-2">Currently insured</p>
             </div>
             <div className="bg-brand-100 rounded-full p-3">
-              <DollarSign className="w-6 h-6 text-brand-600" />
+              <Shield className="w-6 h-6 text-brand-600" />
             </div>
           </div>
         </div>
@@ -116,12 +104,14 @@ export default function Dashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 font-medium">Active Accounts</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{summary?.accountCount || 0}</p>
-              <p className="text-xs text-gray-500 mt-2">Ready to use</p>
+              <p className="text-sm text-gray-600 font-medium">Total Coverage</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {formatCurrency(summary.totalCoverage)}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">Protection amount</p>
             </div>
             <div className="bg-green-100 rounded-full p-3">
-              <Wallet className="w-6 h-6 text-green-600" />
+              <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
@@ -129,43 +119,58 @@ export default function Dashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 font-medium">Liquid Assets</p>
+              <p className="text-sm text-gray-600 font-medium">Monthly Premium</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                {formatCurrency(summary?.liquidAssets || 0)}
+                {formatCurrency(summary.monthlyPremium)}
               </p>
-              <p className="text-xs text-gray-500 mt-2">Available funds</p>
+              <p className="text-xs text-gray-500 mt-2">Per month</p>
             </div>
             <div className="bg-blue-100 rounded-full p-3">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
+              <DollarSign className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Active Claims</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {summary.activeClaims}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">In process</p>
+            </div>
+            <div className="bg-purple-100 rounded-full p-3">
+              <Activity className="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Accounts Section */}
+      {/* Recent Policies Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Your Accounts</h2>
-          <button className="btn-primary">
-            Add Account
+          <h2 className="text-xl font-semibold text-gray-900">Recent Policies</h2>
+          <button onClick={() => navigate('/policies')} className="text-brand-600 hover:text-brand-700 text-sm font-medium">
+            View All
           </button>
         </div>
 
-        {accounts && accounts.length > 0 ? (
+        {policies && policies.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {accounts.map((account) => (
-              <AccountCard key={account.id} account={account} />
+            {policies.slice(0, 3).map((policy) => (
+              <PolicyCard key={policy.id} policy={policy} onViewDetails={() => {}} />
             ))}
           </div>
         ) : (
           <div className="card p-12 text-center">
             <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <Wallet className="w-8 h-8 text-gray-400" />
+              <Shield className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Accounts Yet</h3>
-            <p className="text-gray-600 mb-6">Get started by adding your first account</p>
-            <button className="btn-primary">
-              Add Your First Account
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Policies Yet</h3>
+            <p className="text-gray-600 mb-6">Get started by requesting a quote for your first policy</p>
+            <button onClick={() => navigate('/quote')} className="btn-primary">
+              Get a Quote
             </button>
           </div>
         )}
@@ -175,33 +180,42 @@ export default function Dashboard() {
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate('/claims')}
+            className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <div className="bg-brand-100 rounded-lg p-2">
-              <TrendingUp className="w-5 h-5 text-brand-600" />
+              <AlertCircle className="w-5 h-5 text-brand-600" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-gray-900">View Transactions</p>
-              <p className="text-xs text-gray-500">See recent activity</p>
+              <p className="text-sm font-semibold text-gray-900">File a Claim</p>
+              <p className="text-xs text-gray-500">Report an incident</p>
             </div>
           </button>
 
-          <button className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate('/quote')}
+            className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <div className="bg-green-100 rounded-lg p-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
+              <FileText className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-gray-900">Transfer Money</p>
-              <p className="text-xs text-gray-500">Between accounts</p>
+              <p className="text-sm font-semibold text-gray-900">Get a Quote</p>
+              <p className="text-xs text-gray-500">New policy</p>
             </div>
           </button>
 
-          <button className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate('/payments')}
+            className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <div className="bg-purple-100 rounded-lg p-2">
-              <TrendingDown className="w-5 h-5 text-purple-600" />
+              <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-gray-900">Pay Bills</p>
-              <p className="text-xs text-gray-500">Quick payments</p>
+              <p className="text-sm font-semibold text-gray-900">Make Payment</p>
+              <p className="text-xs text-gray-500">Pay premium</p>
             </div>
           </button>
         </div>

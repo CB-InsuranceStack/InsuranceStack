@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { DollarSign, Car, Home, Heart, Shield, CheckCircle } from 'lucide-react';
+import { Car, Home, Heart, Shield, CheckCircle } from 'lucide-react';
 import AlertBanner from '../components/AlertBanner';
 import { api } from '../services/api';
 
 export default function GetQuote() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [policyType, setPolicyType] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -101,7 +99,7 @@ export default function GetQuote() {
       // Create the policy with the quote data
       const policyData = {
         policyNumber,
-        type: policyType,
+        type: policyType as 'auto' | 'home' | 'life' | 'health',
         premium: quoteResult.premium,
         coverage: quoteResult.coverage,
         deductible: quoteResult.deductible,
@@ -109,7 +107,7 @@ export default function GetQuote() {
         endDate: endDate.toISOString(),
       };
 
-      const newPolicy = await api.createPolicy(policyData);
+      await api.createPolicy(policyData);
 
       // Show success message
       setSubmitSuccess(true);

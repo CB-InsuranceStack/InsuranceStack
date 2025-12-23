@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, AlertCircle, Users, CreditCard, DollarSign, Menu, X, LogOut } from 'lucide-react';
+import { Home, FileText, AlertCircle, Users, CreditCard, DollarSign, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -19,7 +19,8 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navigation = [
-    { name: 'Policies', href: '/', icon: FileText },
+    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Policies', href: '/policies', icon: FileText },
     { name: 'Claims', href: '/claims', icon: AlertCircle },
     { name: 'Customers', href: '/customers', icon: Users },
     { name: 'Payments', href: '/payments', icon: CreditCard },

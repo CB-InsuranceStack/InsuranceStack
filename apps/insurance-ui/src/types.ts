@@ -35,6 +35,7 @@ export interface Policy {
   premium: number;
   coverage: number;
   deductible?: number;
+  currency?: string;
   startDate: string;
   endDate: string;
   renewalDate?: string;
@@ -65,6 +66,7 @@ export interface Payment {
   customerId: string;
   amount: number;
   status: 'pending' | 'completed' | 'failed';
+  paymentMethod?: string;
   processedDate?: string;
   createdAt: string;
   updatedAt: string;

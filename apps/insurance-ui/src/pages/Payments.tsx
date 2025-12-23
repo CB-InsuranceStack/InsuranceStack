@@ -1,14 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
-import { CreditCard, CheckCircle, Clock, XCircle, DollarSign, TrendingUp, Filter } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CreditCard, CheckCircle, Clock, XCircle, DollarSign, TrendingUp, Filter, X } from 'lucide-react';
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
-import type { Payment } from '../types';
+import type { Payment, Policy } from '../types';
 import { useState } from 'react';
 import { format } from 'date-fns';
 
 export default function Payments() {
+  const queryClient = useQueryClient();
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [showMakePaymentModal, setShowMakePaymentModal] = useState(false);
+
+  // Form state for new payment
+  const [paymentForm, setPaymentForm] = useState({
+    policyId: '',
+    type: 'premium',
+    amount: '',
+    paymentMethod: 'credit_card',
+  });
+
+  // Fetch active policies for payment selection
+  const { data: policies } = useQuery<Policy[]>({
+    queryKey: ['policies'],
+    queryFn: () => api.getPolicies({ status: 'active' }),
+  });
 
   // Fetch payments data
   const {
@@ -21,6 +37,30 @@ export default function Payments() {
     queryFn: () => api.getPayments(),
     refetchInterval: 30000,
   });
+
+  // Mutation for making new payment
+  const makePaymentMutation = useMutation({
+    mutationFn: (paymentData: Partial<Payment>) => api.createPayment(paymentData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      setShowMakePaymentModal(false);
+      setPaymentForm({ policyId: '', type: 'premium', amount: '', paymentMethod: 'credit_card' });
+    },
+  });
+
+  const handleMakePaymentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const policy = policies?.find(p => p.id === paymentForm.policyId);
+    if (!policy) return;
+
+    makePaymentMutation.mutate({
+      policyId: paymentForm.policyId,
+      customerId: policy.customerId,
+      type: paymentForm.type as 'premium' | 'payout',
+      amount: parseFloat(paymentForm.amount),
+      status: 'pending',
+    });
+  };
 
   // Filter payments
   const filteredPayments = payments?.filter((payment) => {
@@ -155,7 +195,7 @@ export default function Payments() {
           <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-600 mt-1">Track and manage your insurance payments.</p>
         </div>
-        <button className="btn-primary">
+        <button onClick={() => setShowMakePaymentModal(true)} className="btn-primary">
           Make Payment
         </button>
       </div>
@@ -288,7 +328,7 @@ export default function Payments() {
                             Payment #{payment.id.slice(0, 8)}
                           </div>
                           <div className="text-sm text-gray-500">
-                            Policy: {payment.policyId.slice(0, 8)}
+                            Policy: {payment.policyId ? payment.policyId.slice(0, 8) : 'N/A'}
                           </div>
                         </div>
                       </div>
@@ -342,6 +382,126 @@ export default function Payments() {
           </div>
         )}
       </div>
+
+      {/* Make Payment Modal */}
+      {showMakePaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Make Payment</h2>
+              <button
+                onClick={() => setShowMakePaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleMakePaymentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Policy <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={paymentForm.policyId}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, policyId: e.target.value })}
+                  className="input w-full"
+                >
+                  <option value="">Select a policy</option>
+                  {policies?.map((policy) => (
+                    <option key={policy.id} value={policy.id}>
+                      {policy.policyNumber} - {policy.type.toUpperCase()} Insurance (Premium: {formatCurrency(policy.premium)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={paymentForm.type}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, type: e.target.value })}
+                  className="input w-full"
+                >
+                  <option value="premium">Premium Payment</option>
+                  <option value="payout">Payout</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount ($) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  className="input w-full"
+                />
+                {paymentForm.policyId && paymentForm.type === 'premium' && (() => {
+                  const selectedPolicy = policies?.find(p => p.id === paymentForm.policyId);
+                  return selectedPolicy ? (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Monthly premium: {formatCurrency(selectedPolicy.premium)}
+                    </p>
+                  ) : null;
+                })()}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={paymentForm.paymentMethod}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                  className="input w-full"
+                >
+                  <option value="credit_card">Credit Card</option>
+                  <option value="debit_card">Debit Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="check">Check</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowMakePaymentModal(false)}
+                  className="btn-secondary"
+                  disabled={makePaymentMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={makePaymentMutation.isPending}
+                >
+                  {makePaymentMutation.isPending ? 'Processing...' : 'Make Payment'}
+                </button>
+              </div>
+
+              {makePaymentMutation.isError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">
+                    Failed to process payment. Please try again.
+                  </p>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

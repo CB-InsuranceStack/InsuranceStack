@@ -1,4 +1,4 @@
-import { Shield, Car, Home, Heart, Activity, Calendar, DollarSign } from 'lucide-react';
+import { Shield, Car, Home, Heart, Activity, Calendar } from 'lucide-react';
 import type { Policy } from '../types';
 import { format } from 'date-fns';
 

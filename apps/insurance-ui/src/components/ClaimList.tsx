@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { CheckCircle, Clock, XCircle, DollarSign, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
 import type { Claim } from '../types';
 
 interface ClaimListProps {

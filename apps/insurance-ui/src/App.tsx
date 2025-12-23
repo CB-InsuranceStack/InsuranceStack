@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import Policies from './pages/Policies';
 import Claims from './pages/Claims';
 import Customers from './pages/Customers';
@@ -40,7 +41,8 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Routes>
-                      <Route path="/" element={<Policies />} />
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="dashboard" element={<Dashboard />} />
                       <Route path="policies" element={<Policies />} />
                       <Route path="claims" element={<Claims />} />
                       <Route path="customers" element={<Customers />} />
@@ -55,7 +57,7 @@ function App() {
                               <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
                               <p className="text-gray-600 mb-6">Page not found</p>
                               <a href="/" className="btn-primary">
-                                Go to Policies
+                                Go to Dashboard
                               </a>
                             </div>
                           </div>
