@@ -14,15 +14,19 @@ This document tracks the progress of adding InsuranceStack and AccountStack to C
 
 ### 2025-12-23
 
-#### KUBECONFIG Secret Migration
-- **Status**: Testing in progress
+#### KUBECONFIG Secret Migration ✅
+- **Status**: **SUCCESS** - Deployment working with org-level property
 - **Change**: Migrated KUBECONFIG from environment-level secret to organization-level property
 - **Rationale**: Allows reuse across multiple environments and projects
-- **Testing**: Currently testing in InsuranceStack deployment
+- **Key Finding**: CloudBees Unify resolves org-level properties even when Helm charts reference environment-level secrets
+  - Helm chart expects secret at environment level
+  - Works seamlessly with org-level property instead
+  - Simplifies golden demos setup (one KUBECONFIG for all demos)
+- **Testing**: ✅ Verified in InsuranceStack deployment
 - **Next Steps**:
-  - Verify InsuranceStack deployment works with org-level KUBECONFIG
-  - If successful, apply same pattern to AccountStack
-  - Document the configuration for Mimic integration
+  - Apply same pattern to AccountStack
+  - Consider moving FM_KEY to org-level property as well
+  - Document this secret resolution behavior for Mimic integration
 
 ## Configuration Requirements
 
@@ -30,7 +34,7 @@ This document tracks the progress of adding InsuranceStack and AccountStack to C
 
 | Name | Type | Level | Status | Notes |
 |------|------|-------|--------|-------|
-| KUBECONFIG | Property | Organization | Testing | Migrated from environment secret |
+| KUBECONFIG | Property | Organization | ✅ Working | Org-level property works despite Helm expecting env-level |
 | FM_KEY | Secret | Repository | Configured | CloudBees Feature Management API key |
 
 ### Deployment Pattern
@@ -44,9 +48,9 @@ Both applications use:
 ## Mimic Integration Plan
 
 ### Phase 1: Configuration Setup
-- [ ] Validate KUBECONFIG as org-level property
-- [ ] Document required secrets and properties
-- [ ] Test deployment workflows with new configuration
+- [x] Validate KUBECONFIG as org-level property
+- [x] Document required secrets and properties
+- [x] Test deployment workflows with new configuration
 
 ### Phase 2: Mimic Scenario Creation
 - [ ] Create `insurancestack-demo` scenario
