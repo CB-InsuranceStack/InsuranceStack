@@ -53,10 +53,20 @@ Both applications use:
 - [x] Test deployment workflows with new configuration
 
 ### Phase 2: Mimic Scenario Creation
-- [ ] Create `insurancestack-demo` scenario
-- [ ] Create `accountstack-demo` scenario
+- [x] Create `insurancestack-demo` scenario ✅
+- [ ] Create `accountstack-demo` scenario (deferred)
 - [ ] Test end-to-end deployment via Mimic
 - [ ] Document post-setup manual steps
+
+#### InsuranceStack Scenario Created (2025-12-23)
+- **Location**: `/Users/brown/Git_orgs/cb-demos/mimic/scenarios/insurancestack-demo.yaml`
+- **Approach**: Minimal scenario with NO file replacements
+- **Key Insight**: CloudBees workflow overrides all Helm values at deployment time via `--set` flags
+- **Configuration**:
+  - Required secrets: `KUBECONFIG` (org-level)
+  - Parameters: `project_name`, `target_org`, `environment`
+  - Creates: Repository fork, Component, Environment (with FM_TOKEN), Application
+  - No file modifications needed - workflow handles all configuration dynamically
 
 ### Phase 3: Documentation
 - [ ] Update Confluence pages with Mimic instructions
