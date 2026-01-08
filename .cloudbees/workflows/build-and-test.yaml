@@ -443,74 +443,16 @@ jobs:
           echo "Extracted artifact ID: $ART_ID"
           printf '%s' "$ART_ID" > "$CLOUDBEES_OUTPUTS/id"
           echo "Insurance UI artifact ID: $ART_ID"
-  # Deploy all components to Dev using Helm - Instance: demo
+  # Deploy all components to Dev environment using Helm
   deploy-dev:
+    # CloudBees environment (must exist in platform settings)
+    # This is the Kubernetes namespace where resources will be deployed
     environment: insurance-stack-dev
-    uses: ./.cloudbees/workflows/deploy-simple.yaml
-    needs:
-      - build-pricing-engine
-      - build-policy-service
-      - build-customer-service
-      - build-claims-service
-      - build-payments-service
-      - build-insurance-ui
-    with:
-      pricing_engine_image: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
-      policy_service_image: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
-      customer_service_image: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
-      claims_service_image: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
-      payments_service_image: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
-      insurance_ui_image: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
-      pricing_engine_artifact_id: ${{ needs.build-pricing-engine.outputs.ARTIFACT_ID }}
-      policy_service_artifact_id: ${{ needs.build-policy-service.outputs.ARTIFACT_ID }}
-      customer_service_artifact_id: ${{ needs.build-customer-service.outputs.ARTIFACT_ID }}
-      claims_service_artifact_id: ${{ needs.build-claims-service.outputs.ARTIFACT_ID }}
-      payments_service_artifact_id: ${{ needs.build-payments-service.outputs.ARTIFACT_ID }}
-      ui_artifact_id: ${{ needs.build-insurance-ui.outputs.ARTIFACT_ID }}
-      environment_name: insurance-stack-dev
-      repository: ${{ cloudbees.scm.repository }}
-      app_name: insurancestack
-      instance_id: demo
-      base_domain: demos.se-main-demo.sa-demo.beescloud.com
-      commit_sha: ${{ cloudbees.scm.sha }}
-    secrets: inherit
 
-  # Deploy all components to Dev using Helm - Instance: demoa
-  deploy-dev-demoa:
-    environment: insurance-stack-dev
+    # Reference to reusable deployment workflow
     uses: ./.cloudbees/workflows/deploy-simple.yaml
-    needs:
-      - build-pricing-engine
-      - build-policy-service
-      - build-customer-service
-      - build-claims-service
-      - build-payments-service
-      - build-insurance-ui
-    with:
-      pricing_engine_image: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
-      policy_service_image: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
-      customer_service_image: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
-      claims_service_image: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
-      payments_service_image: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
-      insurance_ui_image: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
-      pricing_engine_artifact_id: ${{ needs.build-pricing-engine.outputs.ARTIFACT_ID }}
-      policy_service_artifact_id: ${{ needs.build-policy-service.outputs.ARTIFACT_ID }}
-      customer_service_artifact_id: ${{ needs.build-customer-service.outputs.ARTIFACT_ID }}
-      claims_service_artifact_id: ${{ needs.build-claims-service.outputs.ARTIFACT_ID }}
-      payments_service_artifact_id: ${{ needs.build-payments-service.outputs.ARTIFACT_ID }}
-      ui_artifact_id: ${{ needs.build-insurance-ui.outputs.ARTIFACT_ID }}
-      environment_name: insurance-stack-dev
-      repository: ${{ cloudbees.scm.repository }}
-      app_name: insurancestack
-      instance_id: demoa
-      base_domain: demos.se-main-demo.sa-demo.beescloud.com
-      commit_sha: ${{ cloudbees.scm.sha }}
-    secrets: inherit
 
-  # Deploy all components to DevB using Helm - Instance: demob
-  deploy-devb-demob:
-    environment: insurance-stack-devb
-    uses: ./.cloudbees/workflows/deploy-simple.yaml
+    # Wait for all build jobs to complete before deploying
     needs:
       - build-pricing-engine
       - build-policy-service
@@ -518,23 +460,35 @@ jobs:
       - build-claims-service
       - build-payments-service
       - build-insurance-ui
+
     with:
+      # Docker images to deploy (built in previous jobs)
       pricing_engine_image: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
       policy_service_image: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
       customer_service_image: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
       claims_service_image: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
       payments_service_image: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
       insurance_ui_image: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
+
+      # Artifact IDs for deployment tracking
       pricing_engine_artifact_id: ${{ needs.build-pricing-engine.outputs.ARTIFACT_ID }}
       policy_service_artifact_id: ${{ needs.build-policy-service.outputs.ARTIFACT_ID }}
       customer_service_artifact_id: ${{ needs.build-customer-service.outputs.ARTIFACT_ID }}
       claims_service_artifact_id: ${{ needs.build-claims-service.outputs.ARTIFACT_ID }}
       payments_service_artifact_id: ${{ needs.build-payments-service.outputs.ARTIFACT_ID }}
       ui_artifact_id: ${{ needs.build-insurance-ui.outputs.ARTIFACT_ID }}
-      environment_name: insurance-stack-devb
+
+      # Environment configuration
+      environment_name: insurance-stack-dev    # Must match 'environment' above (K8s namespace)
       repository: ${{ cloudbees.scm.repository }}
-      app_name: insurancestack
-      instance_id: demob
-      base_domain: demos.se-main-demo.sa-demo.beescloud.com
       commit_sha: ${{ cloudbees.scm.sha }}
+
+      # Subdomain configuration
+      # URL will be: <app_name>-<instance_id>-<environment_name>.<base_domain>
+      # Example: insurancestack-demo-insurance-stack-dev.demos.se-main-demo.sa-demo.beescloud.com
+      app_name: insurancestack           # Application name prefix for subdomain
+      instance_id: demo                  # Instance identifier (e.g., demo, team1, customer-name)
+      base_domain: demos.se-main-demo.sa-demo.beescloud.com  # Base domain with wildcard DNS
+
+    # Inherit secrets from workflow (e.g., KUBECONFIG, FM_TOKEN)
     secrets: inherit
