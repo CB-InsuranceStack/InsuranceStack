@@ -42,8 +42,8 @@ jobs:
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
-          username: ${{ vars.IStack_docker_user }}
-          password: ${{ secrets.IStack_docker_token }}
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Docker image
         kind: build
         id: kaniko-pricing
@@ -51,7 +51,7 @@ jobs:
         with:
           context: .
           dockerfile: apps/pricing-engine/Dockerfile
-          destination: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
+          destination: ${{ vars.DOCKER_USER }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
       - name: Parse Pricing Engine artifact ID
@@ -113,8 +113,8 @@ jobs:
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
-          username: ${{ vars.IStack_docker_user }}
-          password: ${{ secrets.IStack_docker_token }}
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Docker image
         kind: build
         id: kaniko-policy
@@ -122,7 +122,7 @@ jobs:
         with:
           context: .
           dockerfile: apps/policy-service/Dockerfile
-          destination: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
+          destination: ${{ vars.DOCKER_USER }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
       - name: Parse Policy Service artifact ID
@@ -185,8 +185,8 @@ jobs:
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
-          username: ${{ vars.IStack_docker_user }}
-          password: ${{ secrets.IStack_docker_token }}
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Docker image
         kind: build
         id: kaniko-customer
@@ -194,7 +194,7 @@ jobs:
         with:
           context: .
           dockerfile: apps/customer-service/Dockerfile
-          destination: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
+          destination: ${{ vars.DOCKER_USER }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
       - name: Parse Customer Service artifact ID
@@ -257,8 +257,8 @@ jobs:
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
-          username: ${{ vars.IStack_docker_user }}
-          password: ${{ secrets.IStack_docker_token }}
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Docker image
         kind: build
         id: kaniko-claims
@@ -266,7 +266,7 @@ jobs:
         with:
           context: .
           dockerfile: apps/claims-service/Dockerfile
-          destination: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
+          destination: ${{ vars.DOCKER_USER }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
       - name: Parse Claims Service artifact ID
@@ -329,8 +329,8 @@ jobs:
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
-          username: ${{ vars.IStack_docker_user }}
-          password: ${{ secrets.IStack_docker_token }}
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Docker image
         kind: build
         id: kaniko-payments
@@ -338,7 +338,7 @@ jobs:
         with:
           context: .
           dockerfile: apps/payments-service/Dockerfile
-          destination: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
+          destination: ${{ vars.DOCKER_USER }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
       - name: Parse Payments Service artifact ID
@@ -403,8 +403,8 @@ jobs:
         uses: cloudbees-io/configure-oci-credentials@v1
         with:
           registry: https://index.docker.io/v1/
-          username: ${{ vars.IStack_docker_user }}
-          password: ${{ secrets.IStack_docker_token }}
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Docker image
         kind: build
         id: kaniko-ui
@@ -412,7 +412,7 @@ jobs:
         with:
           context: apps/insurance-ui
           dockerfile: apps/insurance-ui/Dockerfile
-          destination: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
+          destination: ${{ vars.DOCKER_USER }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
           labels: |
             org.opencontainers.image.revision=${{ cloudbees.scm.sha }}
       - name: Parse Insurance UI artifact ID
@@ -463,12 +463,12 @@ jobs:
 
     with:
       # Docker images to deploy (built in previous jobs)
-      pricing_engine_image: ${{ vars.IStack_docker_user }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
-      policy_service_image: ${{ vars.IStack_docker_user }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
-      customer_service_image: ${{ vars.IStack_docker_user }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
-      claims_service_image: ${{ vars.IStack_docker_user }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
-      payments_service_image: ${{ vars.IStack_docker_user }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
-      insurance_ui_image: ${{ vars.IStack_docker_user }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
+      pricing_engine_image: ${{ vars.DOCKER_USER }}/insurancestack-pricing-engine:${{ cloudbees.scm.sha }}
+      policy_service_image: ${{ vars.DOCKER_USER }}/insurancestack-policy-service:${{ cloudbees.scm.sha }}
+      customer_service_image: ${{ vars.DOCKER_USER }}/insurancestack-customer-service:${{ cloudbees.scm.sha }}
+      claims_service_image: ${{ vars.DOCKER_USER }}/insurancestack-claims-service:${{ cloudbees.scm.sha }}
+      payments_service_image: ${{ vars.DOCKER_USER }}/insurancestack-payments-service:${{ cloudbees.scm.sha }}
+      insurance_ui_image: ${{ vars.DOCKER_USER }}/insurancestack-insurance-ui:${{ cloudbees.scm.sha }}
 
       # Artifact IDs for deployment tracking
       pricing_engine_artifact_id: ${{ needs.build-pricing-engine.outputs.ARTIFACT_ID }}
