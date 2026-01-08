@@ -23,13 +23,10 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Get base path from Vite's import.meta.env.BASE_URL (set via vite.config.ts base option)
-  const basename = import.meta.env.BASE_URL;
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter basename={basename}>
+        <BrowserRouter>
           <Routes>
             {/* Public Route */}
             <Route path="/login" element={<Login />} />
