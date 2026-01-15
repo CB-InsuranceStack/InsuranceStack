@@ -488,7 +488,7 @@ jobs:
       # Example: insurancestack-demo-insurance-stack-dev.demos.se-main-demo.sa-demo.beescloud.com
       app_name: insurancestack           # Application name prefix for subdomain
       instance_id: demo                  # Instance identifier (e.g., demo, team1, customer-name)
-      base_domain: demos.se-main-demo.sa-demo.beescloud.com  # Base domain with wildcard DNS
+      base_domain: ${{ vars.STACK_BASE_NAME }}  # Base domain with wildcard DNS
 
     # Inherit secrets from workflow (e.g., KUBECONFIG, FM_TOKEN)
     secrets: inherit
